@@ -28,7 +28,14 @@ ainsi que des justifications associées.
 - J'ai commencé par créer le schéma relationnel de ma base de données (draw.io) car les APIs seront structuré autour de celle-ci.
 
 
-- Je vais ensuite créer le script de ma base de données ainsi que le docker-compose pour celle-ci
-- Petite note personnelle : pensez a stocké des scripts de migrations de version de la bdd si des mises à jour sont apportés plus tard.
+- J'ai créé les scripts de ma base de données :
+  - J'aurais pu utiliser un uuid à la place d'un serial pour les utilisateurs, les notes et les espaces, mais étant donné que l'API bloquera la demande de donnée d'un autre utilisateur cela ne me semblait pas nécessaire.
+  - Note personnel : pensé à créer les index avec les tables, car pas automatique avec PostgreSQL.
+  - j'ai fait une structure en migration, car permet de garder une base de donnée unique tout en ayant de la possibilité de la faire évoluer au fil du temps.  
+    Bien sûr, cela nécessitera le serveur de gérer les migrations au démarrage, mais ça ne devrait pas causer de problèmes et permet de suivre le standard industriel.
+- J'ai créé un docker-compose pour la bdd car :
+  - Cela me permet de tester l'API sans déployer un vrai serveur PostgreSQL localement (ce que l'on ferait pour un vrai déploiement sur un serveur/VM dédier).
+  - Je peux me fixer sur une version stable que je sais fonctionnel avec le reste de l'application.
+  - Cela permet de rendre la base de donnée du projet reproductible, isolé et sans complication durant le développement étant donné que le docker-compose contient les étapes et configuration nécessaire. 
 
 - Je vais ensuite créer le contrat de mes APIs (routes + methods + schema json) 
