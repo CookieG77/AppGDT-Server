@@ -1,5 +1,6 @@
 Fichier de notes servant a conservé les choix réalisés au fur et à mesure du development des deux applications,
-ainsi que des justifications associées.  
+ainsi que des justifications associées.
+⚠️ Ceci n'est pas un des éléments du rendu, juste des notes personnelles que j'ai utilisé pour ne pas oublier des éléments dans mon rapport.
 
 ### 26/09 :
 
@@ -38,4 +39,6 @@ ainsi que des justifications associées.
   - Je peux me fixer sur une version stable que je sais fonctionnel avec le reste de l'application.
   - Cela permet de rendre la base de donnée du projet reproductible, isolé et sans complication durant le développement étant donné que le docker-compose contient les étapes et configuration nécessaire. 
 
-- Je vais ensuite créer le contrat de mes APIs (routes + methods + schema json) 
+- Après beaucoup de renseignement, j'ai appris que le format utilisé en majorité était OpenAPI.
+- J'ai à l'aide d'une ia (Claude) indiqué les routes de mon API, leur utilité et ce qu'elles attendaient pour générer le fichier openapi.yaml qui suit le format OpenAPI (vérification manuelle du résultat donner effectué).
+
