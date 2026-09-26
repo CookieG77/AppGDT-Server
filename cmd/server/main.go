@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/CookieG77/AppGDT-Server/internal/config"
+	"github.com/CookieG77/AppGDT-Server/internal/database"
 	"github.com/CookieG77/AppGDT-Server/internal/server"
 )
 
@@ -35,6 +36,20 @@ func run(logger *slog.Logger) error {
 	if err != nil {
 		return err
 	}
+
+	dbURL := database.BuildDatabaseURL(cfg.DatabaseCfg)
+
+	// Applying migrations if needed
+	if err := database.Migrate(dbURL); err != nil {
+		return err
+	}
+
+	// Establishing a connection with the Database
+	pool, err := database.Connect(ctx, dbURL)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
 
 	addr := cfg.Address + ":" + strconv.Itoa(cfg.Port)
 	srv := server.New(addr)

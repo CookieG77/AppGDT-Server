@@ -11,8 +11,17 @@ import (
 )
 
 type Config struct {
-	Port    int
-	Address string
+	Port        int
+	Address     string
+	DatabaseCfg *DatabaseConfig
+}
+
+type DatabaseConfig struct {
+	User     string
+	Password string
+	Database string
+	Host     string
+	Port     int
 }
 
 func LoadConfig() (*Config, error) {
@@ -21,9 +30,28 @@ func LoadConfig() (*Config, error) {
 		return nil, fmt.Errorf("loading .env file failed: %w", err)
 	}
 
-	cfg := &Config{
-		Port:    getEnvOrDefaultPort("PORT", 8080),
-		Address: getEnvOrDefault("ADDRESS", "localhost"),
+	user, err := requireEnv("POSTGRES_USER")
+	if err != nil {
+		return nil, err
 	}
+	password, err := requireEnv("POSTGRES_PASSWORD")
+	if err != nil {
+		return nil, err
+	}
+
+	dbCfg := &DatabaseConfig{
+		User:     user,
+		Password: password,
+		Database: getEnvOrDefault("POSTGRES_DB", "gdt"),
+		Host:     getEnvOrDefault("POSTGRES_HOST", "localhost"),
+		Port:     getEnvOrDefaultPort("DB_PORT", 5432),
+	}
+
+	cfg := &Config{
+		Port:        getEnvOrDefaultPort("PORT", 8080),
+		Address:     getEnvOrDefault("ADDRESS", "localhost"),
+		DatabaseCfg: dbCfg,
+	}
+
 	return cfg, nil
 }

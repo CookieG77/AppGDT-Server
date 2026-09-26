@@ -3,6 +3,7 @@
 package config
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 	"strconv"
@@ -15,6 +16,13 @@ func getEnvOrDefault(key string, defaultVal string) string {
 		slog.Warn("environment variable not set", "key", key, "defaultVal", defaultVal)
 	}
 	return defaultVal
+}
+
+func requireEnv(key string) (string, error) {
+	if value, exists := os.LookupEnv(key); exists && value != "" {
+		return value, nil
+	}
+	return "", fmt.Errorf("environment variable '%s' not set", key)
 }
 
 func getEnvOrDefaultInt(key string, defaultVal int) int {
