@@ -1,0 +1,3 @@
+$kind: collection
+description: "Suppression d'un espace (DELETE /spaces/{spaceId}), puis nettoyage des espaces créés par les tests."
+order: 9000

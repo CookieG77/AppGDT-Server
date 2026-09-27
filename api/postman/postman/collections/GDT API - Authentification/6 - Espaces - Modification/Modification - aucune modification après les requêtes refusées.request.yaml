@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces/{{spaceId}}"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 200", () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test("L'espace n'a pas été altéré par les requêtes invalides", () => {
+          pm.expect(body.name).to.eql(pm.collectionVariables.get("spaceName"));
+          pm.expect(body.description).to.eql(pm.collectionVariables.get("spaceDescription"));
+          pm.expect(body.createdAt).to.eql(pm.collectionVariables.get("spaceCreatedAt"));
+      });
+    language: text/javascript
+order: 10000

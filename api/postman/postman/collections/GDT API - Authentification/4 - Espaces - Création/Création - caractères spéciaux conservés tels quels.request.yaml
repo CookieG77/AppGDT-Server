@@ -1,0 +1,26 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: json
+  content: |-
+    {
+      "name": "Robert'); DROP TABLE spaces; --",
+      "description": "<script>alert(1)</script> & \"guillemets\" 🚀"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 201", () => pm.response.to.have.status(201));
+      const body = pm.response.json();
+      pm.test("Tentative d'injection SQL stockée comme simple texte", () =>
+          pm.expect(body.name).to.eql("Robert'); DROP TABLE spaces; --"));
+      pm.test("HTML, guillemets et emoji renvoyés sans altération", () =>
+          pm.expect(body.description).to.eql('<script>alert(1)</script> & "guillemets" 🚀'));
+
+      pm.collectionVariables.set("specialSpaceId", body.id);
+    language: text/javascript
+order: 5000

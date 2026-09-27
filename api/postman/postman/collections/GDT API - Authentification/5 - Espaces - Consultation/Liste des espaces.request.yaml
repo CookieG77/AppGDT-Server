@@ -1,0 +1,27 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 200", () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test("La réponse est un tableau", () => pm.expect(body).to.be.an("array"));
+      pm.test("Les espaces créés sont présents", () => {
+          const ids = body.map(s => s.id);
+          ["spaceId", "secondSpaceId", "boundarySpaceId", "specialSpaceId"].forEach(v =>
+              pm.expect(ids).to.include(Number(pm.collectionVariables.get(v))));
+      });
+      pm.test("Chaque espace respecte le schéma, sans propriétaire exposé", () => {
+          body.forEach(s => {
+              pm.expect(s).to.have.all.keys("id", "name", "description", "createdAt", "updatedAt");
+          });
+      });
+      pm.test("Tri du plus récent au plus ancien", () => {
+          const dates = body.map(s => new Date(s.createdAt).getTime());
+          for (let i = 1; i < dates.length; i++) pm.expect(dates[i - 1]).to.be.at.least(dates[i]);
+      });
+    language: text/javascript
+order: 2000

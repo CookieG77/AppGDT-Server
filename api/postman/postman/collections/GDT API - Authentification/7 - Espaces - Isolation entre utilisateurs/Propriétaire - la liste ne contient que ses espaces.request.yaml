@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 200", () => pm.response.to.have.status(200));
+      pm.test("L'espace du second utilisateur n'apparaît pas", () => {
+          const ids = pm.response.json().map(s => s.id);
+          pm.expect(ids).to.not.include(Number(pm.collectionVariables.get("otherUserSpaceId")));
+      });
+    language: text/javascript
+order: 10000

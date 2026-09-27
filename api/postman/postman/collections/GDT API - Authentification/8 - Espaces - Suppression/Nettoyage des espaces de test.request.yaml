@@ -1,0 +1,34 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces/{{secondSpaceId}}"
+method: DELETE
+headers:
+  Authorization: Bearer {{token}}
+scripts:
+  - type: beforeRequest
+    code: |-
+      // Supprime les autres espaces créés par la collection pour ne pas encombrer la base
+      const baseUrl = pm.collectionVariables.get("baseUrl");
+      [
+          ["boundarySpaceId", "token"],
+          ["specialSpaceId", "token"],
+          ["otherUserSpaceId", "token2"],
+      ].forEach(([idVar, tokenVar]) => {
+          const id = pm.collectionVariables.get(idVar);
+          if (!id) return;
+          pm.sendRequest({
+              url: `${baseUrl}/spaces/${id}`,
+              method: "DELETE",
+              header: { Authorization: `Bearer ${pm.collectionVariables.get(tokenVar)}` },
+          }, (error, res) => {
+              pm.test(`Nettoyage de ${idVar} (204)`, () => {
+                  pm.expect(error).to.be.null;
+                  pm.expect(res.code).to.eql(204);
+              });
+          });
+      });
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 204", () => pm.response.to.have.status(204));
+    language: text/javascript
+order: 8000

@@ -1,0 +1,3 @@
+$kind: collection
+description: "Modification d'un espace (PUT /spaces/{spaceId}) : remplacement complet du nom et de la description."
+order: 7000

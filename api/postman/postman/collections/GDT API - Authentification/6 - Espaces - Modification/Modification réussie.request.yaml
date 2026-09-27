@@ -1,0 +1,45 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces/{{spaceId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: json
+  content: |-
+    {
+      "name": "  Devoirs de maths  ",
+      "description": "  Exercices du chapitre 3  "
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 200", () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test("Même identifiant", () => pm.expect(body.id).to.eql(Number(pm.collectionVariables.get("spaceId"))));
+      pm.test("Nom et description mis à jour sans espaces superflus", () => {
+          pm.expect(body.name).to.eql("Devoirs de maths");
+          pm.expect(body.description).to.eql("Exercices du chapitre 3");
+      });
+      pm.test("createdAt inchangé", () => pm.expect(body.createdAt).to.eql(pm.collectionVariables.get("spaceCreatedAt")));
+      pm.test("updatedAt avancé", () =>
+          pm.expect(new Date(body.updatedAt).getTime()).to.be.above(new Date(pm.collectionVariables.get("spaceUpdatedAt")).getTime()));
+
+      pm.test("Espace conforme au schéma du contrat", () => {
+          const s = pm.response.json();
+          pm.expect(s.id).to.be.a("number").and.above(0);
+          pm.expect(s.name).to.be.a("string");
+          pm.expect(s.description).to.be.a("string");
+          pm.expect(new Date(s.createdAt).toString()).to.not.eql("Invalid Date");
+          pm.expect(new Date(s.updatedAt).toString()).to.not.eql("Invalid Date");
+      });
+      pm.test("Le propriétaire n'est pas exposé", () => {
+          const s = pm.response.json();
+          ["userId", "user_id", "UserID"].forEach(k => pm.expect(s).to.not.have.property(k));
+      });
+
+      pm.collectionVariables.set("spaceName", body.name);
+      pm.collectionVariables.set("spaceDescription", body.description);
+      pm.collectionVariables.set("spaceUpdatedAt", body.updatedAt);
+    language: text/javascript
+order: 2000

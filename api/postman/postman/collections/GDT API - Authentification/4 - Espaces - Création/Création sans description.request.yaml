@@ -1,0 +1,37 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: json
+  content: |-
+    {
+      "name": "Sans description"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 201", () => pm.response.to.have.status(201));
+      const body = pm.response.json();
+      pm.test("Description vide par défaut", () => pm.expect(body.description).to.eql(""));
+      pm.test("Identifiant différent du premier espace", () =>
+          pm.expect(body.id).to.not.eql(Number(pm.collectionVariables.get("spaceId"))));
+
+      pm.test("Espace conforme au schéma du contrat", () => {
+          const s = pm.response.json();
+          pm.expect(s.id).to.be.a("number").and.above(0);
+          pm.expect(s.name).to.be.a("string");
+          pm.expect(s.description).to.be.a("string");
+          pm.expect(new Date(s.createdAt).toString()).to.not.eql("Invalid Date");
+          pm.expect(new Date(s.updatedAt).toString()).to.not.eql("Invalid Date");
+      });
+      pm.test("Le propriétaire n'est pas exposé", () => {
+          const s = pm.response.json();
+          ["userId", "user_id", "UserID"].forEach(k => pm.expect(s).to.not.have.property(k));
+      });
+
+      pm.collectionVariables.set("secondSpaceId", body.id);
+    language: text/javascript
+order: 3000

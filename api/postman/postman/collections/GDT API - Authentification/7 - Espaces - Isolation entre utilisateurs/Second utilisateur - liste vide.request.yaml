@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces"
+method: GET
+headers:
+  Authorization: Bearer {{token2}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 200", () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test("Tableau vide (et non null) pour un nouvel utilisateur", () => pm.expect(body).to.be.an("array").that.is.empty);
+    language: text/javascript
+order: 3000

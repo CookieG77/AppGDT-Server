@@ -1,0 +1,3 @@
+$kind: collection
+description: "Création d'espaces (POST /spaces) : cas nominaux, limites de validation et corps invalides."
+order: 5000

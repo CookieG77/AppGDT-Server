@@ -1,0 +1,19 @@
+$kind: http-request
+name: "Méthode non autorisée (PATCH /spaces/{spaceId})"
+url: "{{baseUrl}}/spaces/{{spaceId}}"
+method: PATCH
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: json
+  content: |-
+    {
+      "name": "Patch"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 405", () => pm.response.to.have.status(405));
+    language: text/javascript
+order: 13000

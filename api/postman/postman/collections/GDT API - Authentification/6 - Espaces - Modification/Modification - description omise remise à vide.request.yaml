@@ -1,0 +1,24 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces/{{spaceId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: json
+  content: |-
+    {
+      "name": "Devoirs de maths"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 200", () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test("PUT remplace tout : la description omise devient vide", () => pm.expect(body.description).to.eql(""));
+      pm.test("Nom conservé", () => pm.expect(body.name).to.eql("Devoirs de maths"));
+
+      pm.collectionVariables.set("spaceName", body.name);
+      pm.collectionVariables.set("spaceDescription", body.description);
+    language: text/javascript
+order: 4000

@@ -1,0 +1,32 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: json
+  content: |-
+    {
+      "name": "{{longName}}",
+      "description": "{{longDescription}}"
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      // Limites exactes du contrat (100 / 1000), comptées en caractères et non en octets :
+      // "é" occupe 2 octets en UTF-8, la requête serait refusée si le serveur comptait les octets.
+      pm.collectionVariables.set("longName", "é".repeat(100));
+      pm.collectionVariables.set("longDescription", "è".repeat(1000));
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 201", () => pm.response.to.have.status(201));
+      const body = pm.response.json();
+      pm.test("Nom de 100 caractères conservé", () => pm.expect(body.name).to.eql("é".repeat(100)));
+      pm.test("Description de 1000 caractères conservée", () =>
+          pm.expect(body.description).to.eql("è".repeat(1000)));
+
+      pm.collectionVariables.set("boundarySpaceId", body.id);
+    language: text/javascript
+order: 4000

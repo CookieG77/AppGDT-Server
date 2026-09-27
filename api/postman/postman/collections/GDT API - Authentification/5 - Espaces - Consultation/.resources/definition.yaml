@@ -1,0 +1,3 @@
+$kind: collection
+description: "Liste (GET /spaces) et détail (GET /spaces/{spaceId}) des espaces, identifiants invalides."
+order: 6000

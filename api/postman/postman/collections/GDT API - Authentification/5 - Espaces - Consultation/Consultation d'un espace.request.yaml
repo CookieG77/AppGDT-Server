@@ -1,0 +1,31 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces/{{spaceId}}"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 200", () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test("Il s'agit bien de l'espace créé", () => {
+          pm.expect(body.id).to.eql(Number(pm.collectionVariables.get("spaceId")));
+          pm.expect(body.name).to.eql(pm.collectionVariables.get("spaceName"));
+          pm.expect(body.description).to.eql(pm.collectionVariables.get("spaceDescription"));
+          pm.expect(body.createdAt).to.eql(pm.collectionVariables.get("spaceCreatedAt"));
+      });
+
+      pm.test("Espace conforme au schéma du contrat", () => {
+          const s = pm.response.json();
+          pm.expect(s.id).to.be.a("number").and.above(0);
+          pm.expect(s.name).to.be.a("string");
+          pm.expect(s.description).to.be.a("string");
+          pm.expect(new Date(s.createdAt).toString()).to.not.eql("Invalid Date");
+          pm.expect(new Date(s.updatedAt).toString()).to.not.eql("Invalid Date");
+      });
+      pm.test("Le propriétaire n'est pas exposé", () => {
+          const s = pm.response.json();
+          ["userId", "user_id", "UserID"].forEach(k => pm.expect(s).to.not.have.property(k));
+      });
+    language: text/javascript
+order: 3000

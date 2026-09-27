@@ -1,0 +1,28 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces/{{spaceId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token2}}
+body:
+  type: json
+  content: |-
+    {
+      "name": "Piraté",
+      "description": "Modifié par un autre utilisateur"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 404", () => pm.response.to.have.status(404));
+      pm.test("Code NOT_FOUND", () => pm.expect(pm.response.json().code).to.eql("NOT_FOUND"));
+
+      pm.test("Réponse au format d'erreur du contrat", () => {
+          const body = pm.response.json();
+          pm.expect(body).to.have.property("code").that.is.a("string");
+          pm.expect(body).to.have.property("message").that.is.a("string");
+      });
+      pm.test("Réponse identique à celle d'un espace inexistant (aucune fuite d'information)", () =>
+          pm.expect(pm.response.text()).to.eql(pm.collectionVariables.get("notFoundBody")));
+    language: text/javascript
+order: 5000

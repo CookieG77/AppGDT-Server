@@ -1,0 +1,3 @@
+$kind: collection
+description: "Un second utilisateur ne doit ni voir, ni modifier, ni supprimer les espaces du premier. Un espace d'autrui est traité comme inexistant (404 identique), sans révéler son existence."
+order: 8000

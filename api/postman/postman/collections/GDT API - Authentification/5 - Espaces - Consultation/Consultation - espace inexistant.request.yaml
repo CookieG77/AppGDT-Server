@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces/999999999999"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 404", () => pm.response.to.have.status(404));
+      pm.test("Code NOT_FOUND", () => pm.expect(pm.response.json().code).to.eql("NOT_FOUND"));
+
+      pm.test("Réponse au format d'erreur du contrat", () => {
+          const body = pm.response.json();
+          pm.expect(body).to.have.property("code").that.is.a("string");
+          pm.expect(body).to.have.property("message").that.is.a("string");
+      });
+
+      // Référence pour vérifier qu'un espace d'autrui renvoie exactement la même réponse
+      pm.collectionVariables.set("notFoundBody", pm.response.text());
+    language: text/javascript
+order: 6000

@@ -1,8 +1,8 @@
 $kind: collection
 description: |-
-  Tests de l'API d'authentification de GDT.
+  Tests de l'API de GDT : authentification (dossiers 0 à 3) et espaces (dossiers 4 à 8).
 
-  À exécuter dans l'ordre avec le Collection Runner : chaque requête peut dépendre des variables créées par les précédentes (email, token).
+  À exécuter dans l'ordre avec le Collection Runner : chaque requête peut dépendre des variables créées par les précédentes (email, token, identifiants d'espaces).
 
   Prérequis : serveur lancé sur {{baseUrl}} et base de données démarrée.
 variables:
@@ -37,5 +37,53 @@ variables:
     value: ""
     disabled: false
   - key: tamperedToken
+    value: ""
+    disabled: false
+  - key: spaceId
+    value: ""
+    disabled: false
+  - key: spaceName
+    value: ""
+    disabled: false
+  - key: spaceDescription
+    value: ""
+    disabled: false
+  - key: spaceCreatedAt
+    value: ""
+    disabled: false
+  - key: spaceUpdatedAt
+    value: ""
+    disabled: false
+  - key: secondSpaceId
+    value: ""
+    disabled: false
+  - key: boundarySpaceId
+    value: ""
+    disabled: false
+  - key: specialSpaceId
+    value: ""
+    disabled: false
+  - key: otherUserSpaceId
+    value: ""
+    disabled: false
+  - key: longName
+    value: ""
+    disabled: false
+  - key: longDescription
+    value: ""
+    disabled: false
+  - key: tooLongName
+    value: ""
+    disabled: false
+  - key: tooLongDescription
+    value: ""
+    disabled: false
+  - key: notFoundBody
+    value: ""
+    disabled: false
+  - key: email2
+    value: ""
+    disabled: false
+  - key: token2
     value: ""
     disabled: false

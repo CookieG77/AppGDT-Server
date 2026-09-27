@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 200", () => pm.response.to.have.status(200));
+      const ids = pm.response.json().map(s => s.id);
+      pm.test("L'espace supprimé a disparu de la liste", () =>
+          pm.expect(ids).to.not.include(Number(pm.collectionVariables.get("spaceId"))));
+      pm.test("Les autres espaces sont toujours présents", () =>
+          pm.expect(ids).to.include(Number(pm.collectionVariables.get("secondSpaceId"))));
+    language: text/javascript
+order: 6000
