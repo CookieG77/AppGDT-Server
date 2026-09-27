@@ -31,6 +31,11 @@ func New(addr string, h Handlers, requireAuth func(http.Handler) http.Handler) *
 	mux.Handle("GET /spaces/{spaceId}", requireAuth(http.HandlerFunc(h.Space.Get)))
 	mux.Handle("PUT /spaces/{spaceId}", requireAuth(http.HandlerFunc(h.Space.Update)))
 	mux.Handle("DELETE /spaces/{spaceId}", requireAuth(http.HandlerFunc(h.Space.Delete)))
+	mux.Handle("GET /spaces/{spaceId}/notes", requireAuth(http.HandlerFunc(h.Note.List)))
+	mux.Handle("POST /spaces/{spaceId}/notes", requireAuth(http.HandlerFunc(h.Note.Create)))
+	mux.Handle("GET /notes/{noteId}", requireAuth(http.HandlerFunc(h.Note.Get)))
+	mux.Handle("PUT /notes/{noteId}", requireAuth(http.HandlerFunc(h.Note.Update)))
+	mux.Handle("DELETE /notes/{noteId}", requireAuth(http.HandlerFunc(h.Note.Delete)))
 
 	return &http.Server{
 		Addr:              addr,
