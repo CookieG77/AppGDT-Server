@@ -77,7 +77,7 @@ func LoadConfig() (*Config, error) {
 	}
 
 	ttl := getEnvOrDefaultDuration("JWT_TTL", time.Hour)
-	if ttl < time.Minute*5 && ttl > time.Hour*24 { // Prevent absurdly low or high jwt validity duration
+	if ttl < time.Minute*5 || ttl > time.Hour*24 { // Prevent absurdly low or high jwt validity duration
 		return nil, fmt.Errorf("JWT_TTL must be between 5 minute and 24 hours")
 	}
 
