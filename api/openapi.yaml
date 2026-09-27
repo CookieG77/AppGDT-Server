@@ -540,6 +540,7 @@ components:
           example: Exercices de mathématiques
         content:
           type: string
+          maxLength: 50000
           default: ""
           example: Faire les exercices 4 à 7 page 52.
         status:
