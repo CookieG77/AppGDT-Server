@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces/{{noteSpaceId}}/notes"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: json
+  content: |-
+    {
+      "title": "Rendre le devoir",
+      "content": "Rendu le 26/09",
+      "status": "done"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 201", () => pm.response.to.have.status(201));
+      pm.test("État done conservé", () => pm.expect(pm.response.json().status).to.eql("done"));
+      pm.collectionVariables.set("thirdNoteId", pm.response.json().id);
+    language: text/javascript
+order: 6000

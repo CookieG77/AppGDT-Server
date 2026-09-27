@@ -1,0 +1,3 @@
+$kind: collection
+description: "Suppression d'une note (DELETE /notes/{noteId}), suppression en cascade avec l'espace, puis nettoyage."
+order: 14000

@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces/{{noteSpaceId}}/notes"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 200", () => pm.response.to.have.status(200));
+      const ids = pm.response.json().map(n => n.id);
+      pm.test("La note supprimée a disparu de la liste", () =>
+          pm.expect(ids).to.not.include(Number(pm.collectionVariables.get("noteId"))));
+      pm.test("Les autres notes sont toujours présentes", () => pm.expect(ids).to.have.lengthOf(4));
+    language: text/javascript
+order: 6000

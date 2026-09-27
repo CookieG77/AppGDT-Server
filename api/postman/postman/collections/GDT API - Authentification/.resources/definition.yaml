@@ -1,6 +1,6 @@
 $kind: collection
 description: |-
-  Tests de l'API de GDT : authentification (dossiers 0 à 3) et espaces (dossiers 4 à 8).
+  Tests de l'API de GDT : authentification (dossiers 0 à 3) et espaces (dossiers 4 à 8) et notes (dossiers 9 à 13).
 
   À exécuter dans l'ordre avec le Collection Runner : chaque requête peut dépendre des variables créées par les précédentes (email, token, identifiants d'espaces).
 
@@ -85,5 +85,53 @@ variables:
     value: ""
     disabled: false
   - key: token2
+    value: ""
+    disabled: false
+  - key: noteSpaceId
+    value: ""
+    disabled: false
+  - key: otherNoteSpaceId
+    value: ""
+    disabled: false
+  - key: noteId
+    value: ""
+    disabled: false
+  - key: secondNoteId
+    value: ""
+    disabled: false
+  - key: thirdNoteId
+    value: ""
+    disabled: false
+  - key: boundaryNoteId
+    value: ""
+    disabled: false
+  - key: specialNoteId
+    value: ""
+    disabled: false
+  - key: noteTitle
+    value: ""
+    disabled: false
+  - key: noteContent
+    value: ""
+    disabled: false
+  - key: noteStatus
+    value: ""
+    disabled: false
+  - key: noteCreatedAt
+    value: ""
+    disabled: false
+  - key: noteUpdatedAt
+    value: ""
+    disabled: false
+  - key: longTitle
+    value: ""
+    disabled: false
+  - key: longContent
+    value: ""
+    disabled: false
+  - key: tooLongTitle
+    value: ""
+    disabled: false
+  - key: tooLongContent
     value: ""
     disabled: false

@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: json
+  content: |-
+    {
+      "name": "Second espace des notes"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 201", () => pm.response.to.have.status(201));
+      pm.collectionVariables.set("otherNoteSpaceId", pm.response.json().id);
+    language: text/javascript
+order: 5000

@@ -1,0 +1,25 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces/{{noteSpaceId}}/notes"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: json
+  content: |-
+    {
+      "title": "Robert'); DROP TABLE notes; --",
+      "content": "<img src=x onerror=alert(1)>\n\t\"guillemets\" & 🚀"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 201", () => pm.response.to.have.status(201));
+      const body = pm.response.json();
+      pm.test("Tentative d'injection SQL stockée comme simple texte", () =>
+          pm.expect(body.title).to.eql("Robert'); DROP TABLE notes; --"));
+      pm.test("HTML, tabulation, guillemets et emoji renvoyés sans altération", () =>
+          pm.expect(body.content).to.eql('<img src=x onerror=alert(1)>\n\t"guillemets" & 🚀'));
+      pm.collectionVariables.set("specialNoteId", body.id);
+    language: text/javascript
+order: 8000

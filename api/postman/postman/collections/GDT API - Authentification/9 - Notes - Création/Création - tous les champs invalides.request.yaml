@@ -1,0 +1,35 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces/{{noteSpaceId}}/notes"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: json
+  content: |-
+    {
+      "title": "",
+      "content": "{{tooLongContent}}",
+      "status": "fini"
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      pm.collectionVariables.set("tooLongContent", "a".repeat(50001));
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 400", () => pm.response.to.have.status(400));
+      pm.test("Code VALIDATION_ERROR", () => pm.expect(pm.response.json().code).to.eql("VALIDATION_ERROR"));
+      pm.test("Champ(s) signalé(s) : title, content, status", () => {
+          const fields = pm.response.json().details.map(d => d.field);
+          pm.expect(fields).to.have.members(["title", "content", "status"]);
+      });
+
+      pm.test("Réponse au format d'erreur du contrat", () => {
+          const body = pm.response.json();
+          pm.expect(body).to.have.property("code").that.is.a("string");
+          pm.expect(body).to.have.property("message").that.is.a("string");
+      });
+    language: text/javascript
+order: 15000

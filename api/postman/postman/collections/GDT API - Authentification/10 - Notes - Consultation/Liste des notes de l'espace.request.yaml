@@ -1,0 +1,27 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces/{{noteSpaceId}}/notes"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 200", () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test("La réponse est un tableau", () => pm.expect(body).to.be.an("array"));
+      pm.test("Les notes créées sont présentes", () => {
+          const ids = body.map(n => n.id);
+          ["noteId", "secondNoteId", "thirdNoteId", "boundaryNoteId", "specialNoteId"].forEach(v =>
+              pm.expect(ids).to.include(Number(pm.collectionVariables.get(v))));
+      });
+      pm.test("Aucune note créée par une requête refusée", () => pm.expect(body).to.have.lengthOf(5));
+      pm.test("Toutes les notes appartiennent à l'espace demandé", () =>
+          body.forEach(n => pm.expect(n.spaceId).to.eql(Number(pm.collectionVariables.get("noteSpaceId")))));
+      pm.test("Chaque note respecte le schéma", () =>
+          body.forEach(n => pm.expect(n).to.have.all.keys("id", "spaceId", "title", "content", "status", "createdAt", "updatedAt")));
+      pm.test("Tri de la plus récente à la plus ancienne", () => {
+          const dates = body.map(n => new Date(n.createdAt).getTime());
+          for (let i = 1; i < dates.length; i++) pm.expect(dates[i - 1]).to.be.at.least(dates[i]);
+      });
+    language: text/javascript
+order: 2000

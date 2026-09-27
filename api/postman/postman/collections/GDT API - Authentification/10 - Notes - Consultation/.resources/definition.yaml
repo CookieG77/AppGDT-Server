@@ -1,0 +1,3 @@
+$kind: collection
+description: "Liste des notes d'un espace (GET /spaces/{spaceId}/notes) et détail d'une note (GET /notes/{noteId})."
+order: 11000

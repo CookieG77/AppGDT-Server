@@ -1,0 +1,29 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces/{{noteSpaceId}}/notes"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: json
+  content: |-
+    {
+      "title": "{{longTitle}}",
+      "content": "{{longContent}}"
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      // Limites exactes du contrat, comptées en caractères : "é" occupe 2 octets en UTF-8
+      pm.collectionVariables.set("longTitle", "é".repeat(200));
+      pm.collectionVariables.set("longContent", "é".repeat(50000));
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 201", () => pm.response.to.have.status(201));
+      const body = pm.response.json();
+      pm.test("Titre de 200 caractères conservé", () => pm.expect(body.title).to.eql("é".repeat(200)));
+      pm.test("Contenu de 50000 caractères conservé", () => pm.expect(body.content.length).to.eql(50000));
+      pm.collectionVariables.set("boundaryNoteId", body.id);
+    language: text/javascript
+order: 7000

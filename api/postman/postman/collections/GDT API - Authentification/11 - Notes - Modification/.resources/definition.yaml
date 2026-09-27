@@ -1,0 +1,3 @@
+$kind: collection
+description: "Modification d'une note (PUT /notes/{noteId}) : remplacement complet du titre, du contenu et de l'état."
+order: 12000

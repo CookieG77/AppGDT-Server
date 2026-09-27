@@ -1,0 +1,33 @@
+$kind: http-request
+url: "{{baseUrl}}/notes/{{noteId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: json
+  content: |-
+    {
+      "title": "{{tooLongTitle}}"
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      pm.collectionVariables.set("tooLongTitle", "a".repeat(201));
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 400", () => pm.response.to.have.status(400));
+      pm.test("Code VALIDATION_ERROR", () => pm.expect(pm.response.json().code).to.eql("VALIDATION_ERROR"));
+      pm.test("Champ(s) signalé(s) : title", () => {
+          const fields = pm.response.json().details.map(d => d.field);
+          pm.expect(fields).to.have.members(["title"]);
+      });
+
+      pm.test("Réponse au format d'erreur du contrat", () => {
+          const body = pm.response.json();
+          pm.expect(body).to.have.property("code").that.is.a("string");
+          pm.expect(body).to.have.property("message").that.is.a("string");
+      });
+    language: text/javascript
+order: 7000

@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/notes/{{noteId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: json
+  content: |-
+    {
+      "title": "Exercices corrigés",
+      "content": "Correction faite en classe",
+      "status": "in_progress"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 200", () => pm.response.to.have.status(200));
+      pm.test("État in_progress", () => pm.expect(pm.response.json().status).to.eql("in_progress"));
+    language: text/javascript
+order: 4000

@@ -1,0 +1,25 @@
+$kind: http-request
+url: "{{baseUrl}}/notes/999999999999"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: json
+  content: |-
+    {
+      "title": "Fantôme"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 404", () => pm.response.to.have.status(404));
+      pm.test("Code NOT_FOUND", () => pm.expect(pm.response.json().code).to.eql("NOT_FOUND"));
+
+      pm.test("Réponse au format d'erreur du contrat", () => {
+          const body = pm.response.json();
+          pm.expect(body).to.have.property("code").that.is.a("string");
+          pm.expect(body).to.have.property("message").that.is.a("string");
+      });
+    language: text/javascript
+order: 12000

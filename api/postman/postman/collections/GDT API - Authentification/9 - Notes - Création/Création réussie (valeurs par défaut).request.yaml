@@ -1,0 +1,47 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces/{{noteSpaceId}}/notes"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: json
+  content: |-
+    {
+      "title": "  Exercices de maths  ",
+      "content": "  Faire les exercices 4 à 7\n    - page 52\n"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 201", () => pm.response.to.have.status(201));
+      pm.test("Content-Type JSON", () => pm.response.to.have.header("Content-Type", "application/json"));
+      const body = pm.response.json();
+      pm.test("Titre sans espaces superflus", () => pm.expect(body.title).to.eql("Exercices de maths"));
+      pm.test("Contenu conservé tel quel (indentation et retours à la ligne)", () =>
+          pm.expect(body.content).to.eql("  Faire les exercices 4 à 7\n    - page 52\n"));
+      pm.test("État todo par défaut", () => pm.expect(body.status).to.eql("todo"));
+      pm.test("Rattachée à l'espace du chemin", () =>
+          pm.expect(body.spaceId).to.eql(Number(pm.collectionVariables.get("noteSpaceId"))));
+      pm.test("createdAt et updatedAt identiques à la création", () => pm.expect(body.updatedAt).to.eql(body.createdAt));
+
+      pm.test("Note conforme au schéma du contrat", () => {
+          const n = pm.response.json();
+          pm.expect(n).to.have.all.keys("id", "spaceId", "title", "content", "status", "createdAt", "updatedAt");
+          pm.expect(n.id).to.be.a("number").and.above(0);
+          pm.expect(n.spaceId).to.be.a("number").and.above(0);
+          pm.expect(n.title).to.be.a("string");
+          pm.expect(n.content).to.be.a("string");
+          pm.expect(["todo", "in_progress", "done"]).to.include(n.status);
+          pm.expect(new Date(n.createdAt).toString()).to.not.eql("Invalid Date");
+          pm.expect(new Date(n.updatedAt).toString()).to.not.eql("Invalid Date");
+      });
+
+      pm.collectionVariables.set("noteId", body.id);
+      pm.collectionVariables.set("noteTitle", body.title);
+      pm.collectionVariables.set("noteContent", body.content);
+      pm.collectionVariables.set("noteStatus", body.status);
+      pm.collectionVariables.set("noteCreatedAt", body.createdAt);
+      pm.collectionVariables.set("noteUpdatedAt", body.updatedAt);
+    language: text/javascript
+order: 4000

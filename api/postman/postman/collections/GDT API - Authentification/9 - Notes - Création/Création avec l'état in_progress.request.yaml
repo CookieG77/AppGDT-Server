@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces/{{noteSpaceId}}/notes"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: json
+  content: |-
+    {
+      "title": "Réviser le chapitre 3",
+      "status": "in_progress"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 201", () => pm.response.to.have.status(201));
+      const body = pm.response.json();
+      pm.test("État in_progress conservé", () => pm.expect(body.status).to.eql("in_progress"));
+      pm.test("Contenu vide par défaut", () => pm.expect(body.content).to.eql(""));
+      pm.collectionVariables.set("secondNoteId", body.id);
+    language: text/javascript
+order: 5000

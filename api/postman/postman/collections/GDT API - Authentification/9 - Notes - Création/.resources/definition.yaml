@@ -1,0 +1,3 @@
+$kind: collection
+description: "Création de notes (POST /spaces/{spaceId}/notes) : valeurs par défaut, états, limites de validation et corps invalides."
+order: 10000

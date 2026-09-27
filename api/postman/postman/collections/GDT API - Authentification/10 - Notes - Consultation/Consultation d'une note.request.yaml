@@ -1,0 +1,32 @@
+$kind: http-request
+url: "{{baseUrl}}/notes/{{noteId}}"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 200", () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test("Il s'agit bien de la note créée", () => {
+          pm.expect(body.id).to.eql(Number(pm.collectionVariables.get("noteId")));
+          pm.expect(body.spaceId).to.eql(Number(pm.collectionVariables.get("noteSpaceId")));
+          pm.expect(body.title).to.eql(pm.collectionVariables.get("noteTitle"));
+          pm.expect(body.content).to.eql(pm.collectionVariables.get("noteContent"));
+          pm.expect(body.status).to.eql(pm.collectionVariables.get("noteStatus"));
+          pm.expect(body.createdAt).to.eql(pm.collectionVariables.get("noteCreatedAt"));
+      });
+
+      pm.test("Note conforme au schéma du contrat", () => {
+          const n = pm.response.json();
+          pm.expect(n).to.have.all.keys("id", "spaceId", "title", "content", "status", "createdAt", "updatedAt");
+          pm.expect(n.id).to.be.a("number").and.above(0);
+          pm.expect(n.spaceId).to.be.a("number").and.above(0);
+          pm.expect(n.title).to.be.a("string");
+          pm.expect(n.content).to.be.a("string");
+          pm.expect(["todo", "in_progress", "done"]).to.include(n.status);
+          pm.expect(new Date(n.createdAt).toString()).to.not.eql("Invalid Date");
+          pm.expect(new Date(n.updatedAt).toString()).to.not.eql("Invalid Date");
+      });
+    language: text/javascript
+order: 7000

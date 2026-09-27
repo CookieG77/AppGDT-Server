@@ -1,0 +1,25 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces/{{noteSpaceId}}/notes"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "Note"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 401", () => pm.response.to.have.status(401));
+      pm.test("En-tête WWW-Authenticate: Bearer", () => pm.response.to.have.header("WWW-Authenticate", "Bearer"));
+      pm.test("Code UNAUTHORIZED", () => pm.expect(pm.response.json().code).to.eql("UNAUTHORIZED"));
+
+      pm.test("Réponse au format d'erreur du contrat", () => {
+          const body = pm.response.json();
+          pm.expect(body).to.have.property("code").that.is.a("string");
+          pm.expect(body).to.have.property("message").that.is.a("string");
+      });
+    language: text/javascript
+order: 3000

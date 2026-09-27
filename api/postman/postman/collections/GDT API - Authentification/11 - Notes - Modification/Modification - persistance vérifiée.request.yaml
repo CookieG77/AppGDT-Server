@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/notes/{{noteId}}"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 200", () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test("Les nouvelles valeurs sont enregistrées", () => {
+          pm.expect(body.title).to.eql(pm.collectionVariables.get("noteTitle"));
+          pm.expect(body.content).to.eql(pm.collectionVariables.get("noteContent"));
+          pm.expect(body.status).to.eql(pm.collectionVariables.get("noteStatus"));
+          pm.expect(body.updatedAt).to.eql(pm.collectionVariables.get("noteUpdatedAt"));
+      });
+    language: text/javascript
+order: 3000

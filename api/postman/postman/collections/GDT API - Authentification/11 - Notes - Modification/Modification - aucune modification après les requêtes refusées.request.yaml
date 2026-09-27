@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/notes/{{noteId}}"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 200", () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test("La note n'a pas été altérée par les requêtes invalides", () => {
+          pm.expect(body.title).to.eql(pm.collectionVariables.get("noteTitle"));
+          pm.expect(body.content).to.eql(pm.collectionVariables.get("noteContent"));
+          pm.expect(body.status).to.eql(pm.collectionVariables.get("noteStatus"));
+          pm.expect(body.spaceId).to.eql(Number(pm.collectionVariables.get("noteSpaceId")));
+      });
+    language: text/javascript
+order: 11000

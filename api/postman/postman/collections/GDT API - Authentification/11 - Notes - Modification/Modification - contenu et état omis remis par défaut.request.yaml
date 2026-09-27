@@ -1,0 +1,25 @@
+$kind: http-request
+url: "{{baseUrl}}/notes/{{noteId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: json
+  content: |-
+    {
+      "title": "Exercices corrigés"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 200", () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test("PUT remplace tout : le contenu omis devient vide", () => pm.expect(body.content).to.eql(""));
+      pm.test("PUT remplace tout : l'état omis revient à todo", () => pm.expect(body.status).to.eql("todo"));
+
+      pm.collectionVariables.set("noteTitle", body.title);
+      pm.collectionVariables.set("noteContent", body.content);
+      pm.collectionVariables.set("noteStatus", body.status);
+    language: text/javascript
+order: 5000

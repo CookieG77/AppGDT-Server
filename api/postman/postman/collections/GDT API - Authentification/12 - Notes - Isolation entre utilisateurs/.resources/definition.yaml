@@ -1,0 +1,3 @@
+$kind: collection
+description: "Le second utilisateur (créé dans le dossier 7) ne doit ni voir, ni créer, ni modifier, ni supprimer les notes du premier. Une ressource d'autrui est traitée comme inexistante (404 identique)."
+order: 13000
