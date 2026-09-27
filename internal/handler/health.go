@@ -1,4 +1,3 @@
-// Package handler provides the basic route to check if you the api is running
 package handler
 
 import (
