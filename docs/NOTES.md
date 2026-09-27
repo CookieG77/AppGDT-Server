@@ -42,3 +42,8 @@ ainsi que des justifications associées.
 - Après beaucoup de renseignement, j'ai appris que le format utilisé en majorité était OpenAPI.
 - J'ai à l'aide d'une ia (Claude) indiqué les routes de mon API, leur utilité et ce qu'elles attendaient pour générer le fichier openapi.yaml qui suit le format OpenAPI (vérification manuelle du résultat donner effectué).
 
+- J'ai mit en place la base de la structure en go (`go.mod`, `main.go`, `config.go`).
+- J'ai mit en place la connection avec la base de donnée ainsi que la mise à jour auto de la bdd via les fichiers de migration (`database.go`, `migrate.go`).
+
+### 27/09 :
+
