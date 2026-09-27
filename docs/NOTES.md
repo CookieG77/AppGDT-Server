@@ -49,5 +49,11 @@ ainsi que des justifications associées.
 
 - J'ai dans un premier temps créer des models pour les différents types que j'utiliserai pour l'API
 - J'ai ensuite créé les différents scripts de récupération de données via le pool bdd créer hier.
+
 - J'ai choisi de forcé la nécessité de l'userID dans le repository des notes pour empêcher un user d'effacé les notes d'un autre. 
+- Pour le repository de la table 'users' j'ai dû créer une gestion d'erreur postgres specific pour pouvoir gérer l'ajout d'une nouvelle user sans avoir à demander avant si l'adresse mail est déjà utilisé afin de réduire le nombre de requêtes au serveur sql.
+
+- En créant le package httpjson, je me suis retrouvé à penser à la limite du corp. On ne peut pas accepter des tailles stupidement grandes pour le corp sinon on créerait une porte ouverte aux attaques de type DDOS :
+  - J'ai donc décidé de fixer la taille du corp max à 1Mo ce qui laisse au moins plus de 50000 caractères de disponible dans une seule note et c'est pour cela que j'ai décidé de fixer la taille max d'une note à 50000 sur le backend(server) et plus tard sur la partie frontend(client).
+
 - 
