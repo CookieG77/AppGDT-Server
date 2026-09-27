@@ -19,7 +19,7 @@ func (n NoteStatus) IsValid() bool {
 }
 
 const (
-	NoteTitleMaxLength   = 255
+	NoteTitleMaxLength   = 200
 	NoteContentMaxLength = 50000
 )
 
