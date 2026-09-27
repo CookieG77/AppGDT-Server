@@ -21,6 +21,16 @@ type ValidationError struct {
 	Fields []FieldError `json:"fields"`
 }
 
-func (e ValidationError) Error() string {
+func (e *ValidationError) Error() string {
 	return "validation failed"
+}
+
+// Add recordes a validation failure on the given field.
+func (e *ValidationError) Add(field, message string) {
+	e.Fields = append(e.Fields, FieldError{Field: field, Message: message})
+}
+
+// HasErrors returns true if there is at least one validation failure recorded, false otherwise.
+func (e *ValidationError) HasErrors() bool {
+	return len(e.Fields) > 0
 }
