@@ -4,7 +4,7 @@ info:
   title: GDT API
   version: 0.1.0
   description: |
-    API REST de 'Application de gestion de tâches'.
+    API REST de gestion de notes organisées par espaces.
 
     Un utilisateur authentifié possède des espaces, et chaque espace contient des notes.
     Un utilisateur ne peut accéder qu'à ses propres espaces et notes : toute ressource
