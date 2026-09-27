@@ -12,9 +12,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/CookieG77/AppGDT-Server/internal/auth"
 	"github.com/CookieG77/AppGDT-Server/internal/config"
 	"github.com/CookieG77/AppGDT-Server/internal/database"
+	"github.com/CookieG77/AppGDT-Server/internal/handler"
+	"github.com/CookieG77/AppGDT-Server/internal/middleware"
+	"github.com/CookieG77/AppGDT-Server/internal/repository"
 	"github.com/CookieG77/AppGDT-Server/internal/server"
+	"github.com/CookieG77/AppGDT-Server/internal/service"
 )
 
 func main() {
@@ -51,8 +56,31 @@ func run(logger *slog.Logger) error {
 	}
 	defer pool.Close()
 
+	// Creating Repositories
+	userRepository := repository.NewUserRepository(pool)
+	//spaceRepository := repository.NewSpaceRepository(pool)
+	//noteRepository := repository.NewNoteRepository(pool)
+
+	// Starting authentication tools
+	passwordHasher := auth.NewPasswordHasher(cfg.HashingCfg.Cost)
+	tokenManager :=	auth.NewTokenManager(cfg.TokenCfg.Secret, cfg.TokenCfg.TTL)
+
+	// Starting services
+	authService, err := service.NewAuthService(userRepository, passwordHasher, tokenManager)
+	if err != nil {
+		return err
+	}
+
+	// Creating handlers and server
+	handlers := server.Handlers{
+		Auth: handler.NewAuthHandler(authService),
+		User: handler.NewUserHandler(authService),
+	}
+
+	requireAuth := middleware.Authenticate(tokenManager)
+
 	addr := cfg.Address + ":" + strconv.Itoa(cfg.Port)
-	srv := server.New(addr)
+	srv := server.New(addr, handlers, requireAuth)
 
 	// Starting the server in a goroutine to prevent a freeze of the exit signal waiter
 	servErr := make(chan error, 1)
