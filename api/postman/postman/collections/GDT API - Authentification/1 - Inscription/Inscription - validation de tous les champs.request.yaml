@@ -1,0 +1,32 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "pas-un-email",
+      "username": "   ",
+      "password": "court"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 400", () => pm.response.to.have.status(400));
+      const body = pm.response.json();
+      pm.test("Code VALIDATION_ERROR", () => pm.expect(body.code).to.eql("VALIDATION_ERROR"));
+      pm.test("Les trois champs sont signalés en une seule réponse", () => {
+          pm.expect(body.details).to.be.an("array");
+          const fields = body.details.map(d => d.field);
+          pm.expect(fields).to.include.members(["email", "username", "password"]);
+      });
+
+      pm.test("Réponse au format d'erreur du contrat", () => {
+          const body = pm.response.json();
+          pm.expect(body).to.have.property("code").that.is.a("string");
+          pm.expect(body).to.have.property("message").that.is.a("string");
+      });
+    language: text/javascript
+order: 3000

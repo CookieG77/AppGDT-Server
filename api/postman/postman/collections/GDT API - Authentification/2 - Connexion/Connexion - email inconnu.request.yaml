@@ -1,0 +1,32 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "inconnu_{{$timestamp}}@example.com",
+      "password": "MauvaisMotDePasse"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 401", () => pm.response.to.have.status(401));
+      pm.test("Même réponse qu'un mauvais mot de passe (pas d'énumération des comptes)", () =>
+          pm.expect(pm.response.json().message).to.eql(pm.collectionVariables.get("wrongPasswordMessage")));
+
+      // Indicatif uniquement : les temps de réponse varient d'une machine à l'autre.
+      const reference = Number(pm.collectionVariables.get("wrongPasswordTime"));
+      console.log(`Temps email inconnu : ${pm.response.responseTime} ms / mauvais mot de passe : ${reference} ms`);
+      pm.test("Temps de réponse comparable à un mauvais mot de passe (protection temporelle)", () =>
+          pm.expect(pm.response.responseTime).to.be.above(reference * 0.5));
+
+      pm.test("Réponse au format d'erreur du contrat", () => {
+          const body = pm.response.json();
+          pm.expect(body).to.have.property("code").that.is.a("string");
+          pm.expect(body).to.have.property("message").that.is.a("string");
+      });
+    language: text/javascript
+order: 3000

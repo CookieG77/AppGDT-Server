@@ -1,0 +1,22 @@
+$kind: http-request
+name: Inscription - email au format "Nom <adresse>" refusé
+url: "{{baseUrl}}/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "Jean <jean@example.com>",
+      "username": "Jean",
+      "password": "{{password}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 400", () => pm.response.to.have.status(400));
+      pm.test("Erreur sur le champ email", () =>
+          pm.expect(pm.response.json().details.map(d => d.field)).to.include("email"));
+    language: text/javascript
+order: 4000

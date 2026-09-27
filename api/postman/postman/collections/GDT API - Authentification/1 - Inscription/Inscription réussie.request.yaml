@@ -1,0 +1,40 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "  {{emailMixedCase}}  ",
+      "username": "  Utilisateur Test  ",
+      "password": "{{password}}"
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      // Email unique à chaque exécution, avec majuscules pour tester la normalisation
+      const unique = Date.now();
+      pm.collectionVariables.set("emailMixedCase", `Test.User_${unique}@Example.COM`);
+      pm.collectionVariables.set("email", `test.user_${unique}@example.com`);
+      pm.collectionVariables.set("password", "MotDePasseSolide123");
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 201", () => pm.response.to.have.status(201));
+      pm.test("Content-Type JSON", () => pm.response.to.have.header("Content-Type", "application/json"));
+      const body = pm.response.json();
+      pm.test("Identifiant renvoyé", () => pm.expect(body.id).to.be.a("number").and.above(0));
+      pm.test("Email normalisé (espaces retirés, minuscules)", () =>
+          pm.expect(body.email).to.eql(pm.collectionVariables.get("email")));
+      pm.test("Nom d'utilisateur sans espaces superflus", () =>
+          pm.expect(body.username).to.eql("Utilisateur Test"));
+
+      pm.test("Aucun mot de passe ni hash exposé", () => {
+          const body = pm.response.json();
+          ["password", "passwordHash", "password_hash", "PasswordHash"].forEach(k =>
+              pm.expect(body).to.not.have.property(k));
+      });
+    language: text/javascript
+order: 1000

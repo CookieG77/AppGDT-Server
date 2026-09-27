@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/users/me"
+method: GET
+headers:
+  Authorization: Bearer {{tamperedToken}}
+scripts:
+  - type: beforeRequest
+    code: |-
+      // Remplace l'identifiant de l'utilisateur dans le payload sans re-signer le token
+      const [header, payload, signature] = pm.collectionVariables.get("token").split(".");
+      const decoded = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+      decoded.sub = "999999";
+      const forged = btoa(JSON.stringify(decoded)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      pm.collectionVariables.set("tamperedToken", `${header}.${forged}.${signature}`);
+    language: text/javascript
+  - type: afterResponse
+    code: 'pm.test("Statut 401 : la signature ne correspond plus", () => pm.response.to.have.status(401));'
+    language: text/javascript
+order: 4000

@@ -1,0 +1,24 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "long_{{$timestamp}}@example.com",
+      "username": "Long",
+      "password": "{{longPassword}}"
+    }
+scripts:
+  - type: beforeRequest
+    code: pm.collectionVariables.set("longPassword", "a".repeat(73));
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 400", () => pm.response.to.have.status(400));
+      pm.test("Erreur sur le champ password", () =>
+          pm.expect(pm.response.json().details.map(d => d.field)).to.include("password"));
+    language: text/javascript
+order: 5000

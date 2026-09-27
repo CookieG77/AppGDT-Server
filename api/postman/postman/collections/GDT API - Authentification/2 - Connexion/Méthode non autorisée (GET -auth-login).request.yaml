@@ -1,0 +1,9 @@
+$kind: http-request
+name: Méthode non autorisée (GET /auth/login)
+url: "{{baseUrl}}/auth/login"
+method: GET
+scripts:
+  - type: afterResponse
+    code: pm.test("Statut 405", () => pm.response.to.have.status(405));
+    language: text/javascript
+order: 5000

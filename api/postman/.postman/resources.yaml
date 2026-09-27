@@ -1,0 +1,13 @@
+# Use this workspace to collaborate
+workspace:
+  id: b2092470-561c-45b3-90f8-8995533bc2af
+
+cloudResources:
+  collections:
+    ../postman/collections/GDT API - Authentification: 7d03f64e-e5df-44d1-9854-e78f8dd5f3d5
+
+# All resources in the `postman/` folder are automatically registered in Local View.
+# Point to additional files outside the `postman/` folder to register them individually. Example:
+#localResources:
+#  collections:
+#    - ../tests/E2E Test Collection/

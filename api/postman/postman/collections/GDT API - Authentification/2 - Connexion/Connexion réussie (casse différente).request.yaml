@@ -1,0 +1,33 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{emailMixedCase}}",
+      "password": "{{password}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 200", () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test("Token présent", () => pm.expect(body.token).to.be.a("string").and.not.empty);
+      pm.test("Token au format JWT (3 parties)", () => pm.expect(body.token.split(".")).to.have.lengthOf(3));
+      pm.test("tokenType = Bearer", () => pm.expect(body.tokenType).to.eql("Bearer"));
+      pm.test("expiresIn positif", () => pm.expect(body.expiresIn).to.be.a("number").and.above(0));
+
+      pm.test("Le token ne contient que les informations nécessaires", () => {
+          const payload = JSON.parse(atob(body.token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+          pm.expect(payload).to.have.property("sub");
+          pm.expect(payload).to.have.property("exp");
+          pm.expect(payload).to.not.have.property("email");
+          pm.expect(payload).to.not.have.property("password");
+      });
+
+      pm.collectionVariables.set("token", body.token);
+    language: text/javascript
+order: 1000

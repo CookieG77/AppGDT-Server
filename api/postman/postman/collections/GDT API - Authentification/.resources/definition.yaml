@@ -1,0 +1,41 @@
+$kind: collection
+description: |-
+  Tests de l'API d'authentification de GDT.
+
+  À exécuter dans l'ordre avec le Collection Runner : chaque requête peut dépendre des variables créées par les précédentes (email, token).
+
+  Prérequis : serveur lancé sur {{baseUrl}} et base de données démarrée.
+variables:
+  - key: baseUrl
+    value: http://localhost:8080
+    disabled: false
+  - key: email
+    value: ""
+    disabled: false
+  - key: emailMixedCase
+    value: ""
+    disabled: false
+  - key: password
+    value: ""
+    disabled: false
+  - key: token
+    value: ""
+    disabled: false
+  - key: bearer_token_1da3
+    secret: true
+    disabled: false
+  - key: longPassword
+    value: ""
+    disabled: false
+  - key: wrongPasswordMessage
+    value: ""
+    disabled: false
+  - key: wrongPasswordTime
+    value: ""
+    disabled: false
+  - key: noneToken
+    value: ""
+    disabled: false
+  - key: tamperedToken
+    value: ""
+    disabled: false

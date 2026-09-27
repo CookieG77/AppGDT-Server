@@ -1,0 +1,27 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{email}}",
+      "password": "MauvaisMotDePasse"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 401", () => pm.response.to.have.status(401));
+      pm.test("Code INVALID_CREDENTIALS", () => pm.expect(pm.response.json().code).to.eql("INVALID_CREDENTIALS"));
+      pm.collectionVariables.set("wrongPasswordMessage", pm.response.json().message);
+      pm.collectionVariables.set("wrongPasswordTime", pm.response.responseTime);
+
+      pm.test("Réponse au format d'erreur du contrat", () => {
+          const body = pm.response.json();
+          pm.expect(body).to.have.property("code").that.is.a("string");
+          pm.expect(body).to.have.property("message").that.is.a("string");
+      });
+    language: text/javascript
+order: 2000

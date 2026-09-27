@@ -57,4 +57,10 @@ ainsi que des justifications associées.
   - J'ai donc décidé de fixer la taille du corp max à 1Mo ce qui laisse au moins plus de 50000 caractères de disponible dans une seule note et c'est pour cela que j'ai décidé de fixer la taille max d'une note à 50000 sur le backend(server) et plus tard sur la partie frontend(client).
 
 - Après des recherches, j'ai pu voir qu'argon2 était toujours l'algorithme de hashage conseillé par l'OWASP mais que bcrypt était aussi convenable. étant donné que l'on ne traitera pas des données sensibles bcrypt devrait être suffisant pour ce projet.
-- 
+
+- J'ai décidé d'utiliser un dummyhash pour éviter qu'un utilisateur devine si un email est réel en fonction du temps de traitement du login.
+- Avec l'utilisation actuelle du des JWT, on ne permet pas une invalidation des tokens par le serveur. Pour une vraie infrastructure, il faudrait avoir un token d'accès et des tokens de rafraichissement :
+  On attribuerait à la connection un token d'accès qui a une TTL courte (~5min) non révocable, mais qui permet d'obtenir un token de rafraichissement juste derrière. Ce token de raffraichissement aurais une durée de vie bien plus longue, mais qui serait stocké dans la BDD et donc révocable avec une simple requête.
+  Pour la taille de cette application, c'est une structure un peu large, mais elle serait solide.
+
+- Maintenant que j'ai au moins une API en place (auth), j'ai mis en place une collection postman  
