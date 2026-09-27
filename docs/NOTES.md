@@ -56,4 +56,5 @@ ainsi que des justifications associées.
 - En créant le package httpjson, je me suis retrouvé à penser à la limite du corp. On ne peut pas accepter des tailles stupidement grandes pour le corp sinon on créerait une porte ouverte aux attaques de type DDOS :
   - J'ai donc décidé de fixer la taille du corp max à 1Mo ce qui laisse au moins plus de 50000 caractères de disponible dans une seule note et c'est pour cela que j'ai décidé de fixer la taille max d'une note à 50000 sur le backend(server) et plus tard sur la partie frontend(client).
 
+- Après des recherches, j'ai pu voir qu'argon2 était toujours l'algorithme de hashage conseillé par l'OWASP mais que bcrypt était aussi convenable. étant donné que l'on ne traitera pas des données sensibles bcrypt devrait être suffisant pour ce projet.
 - 
