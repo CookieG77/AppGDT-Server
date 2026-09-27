@@ -1,5 +1,3 @@
-// Contains the repository for the 'users' table
-
 package repository
 
 import (

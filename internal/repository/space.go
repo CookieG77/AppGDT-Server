@@ -1,5 +1,3 @@
-// Contains the repository for the 'spaces' table
-
 package repository
 
 import (

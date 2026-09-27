@@ -1,5 +1,3 @@
-// Contains the repository for the 'notes' table
-
 package repository
 
 import (

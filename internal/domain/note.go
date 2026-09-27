@@ -1,5 +1,3 @@
-// Contains the struct type and status of a note (validation method as well)
-
 package domain
 
 import "time"
@@ -19,6 +17,11 @@ func (n NoteStatus) IsValid() bool {
 	}
 	return false
 }
+
+const (
+	NoteTitleMaxLength   = 255
+	NoteContentMaxLength = 50000
+)
 
 type Note struct {
 	ID        int64      `json:"id"`

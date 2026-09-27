@@ -1,5 +1,5 @@
-// Contains the different errors that can be returned by an API calls and the struct types for the API errors
-
+// Package domain contains the different errors that can be returned by an API calls and the struct types for the API errors
+// As well as the data struct for the users, spaces and notes and their associated fields
 package domain
 
 import "errors"

@@ -1,5 +1,3 @@
-// Contains the type of space
-
 package domain
 
 import "time"

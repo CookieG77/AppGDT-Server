@@ -1,5 +1,3 @@
-// Contains the struct type of user
-
 package domain
 
 import "time"
