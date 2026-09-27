@@ -13,7 +13,7 @@ type Handlers struct {
 	Auth  *handler.AuthHandler
 	User  *handler.UserHandler
 	Space *handler.SpaceHandler
-	// Note *handler.NoteHandler
+	Note  *handler.NoteHandler
 }
 
 func New(addr string, h Handlers, requireAuth func(http.Handler) http.Handler) *http.Server {

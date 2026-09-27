@@ -59,11 +59,11 @@ func run(logger *slog.Logger) error {
 	// Creating Repositories
 	userRepository := repository.NewUserRepository(pool)
 	spaceRepository := repository.NewSpaceRepository(pool)
-	//noteRepository := repository.NewNoteRepository(pool)
+	noteRepository := repository.NewNoteRepository(pool)
 
 	// Starting authentication tools
 	passwordHasher := auth.NewPasswordHasher(cfg.HashingCfg.Cost)
-	tokenManager :=	auth.NewTokenManager(cfg.TokenCfg.Secret, cfg.TokenCfg.TTL)
+	tokenManager := auth.NewTokenManager(cfg.TokenCfg.Secret, cfg.TokenCfg.TTL)
 
 	// Starting services
 	authService, err := service.NewAuthService(userRepository, passwordHasher, tokenManager)
@@ -72,12 +72,14 @@ func run(logger *slog.Logger) error {
 	}
 
 	spaceService := service.NewSpaceService(spaceRepository)
+	noteService := service.NewNoteService(noteRepository, spaceRepository)
 
 	// Creating handlers and server
 	handlers := server.Handlers{
-		Auth: handler.NewAuthHandler(authService),
-		User: handler.NewUserHandler(authService),
+		Auth:  handler.NewAuthHandler(authService),
+		User:  handler.NewUserHandler(authService),
 		Space: handler.NewSpaceHandler(spaceService),
+		Note:  handler.NewNoteHandler(noteService),
 	}
 
 	requireAuth := middleware.Authenticate(tokenManager)
