@@ -10,16 +10,14 @@ import (
 )
 
 type Handlers struct {
-	Auth *handler.AuthHandler
-	User *handler.UserHandler
-	// Space *handler.SpaceHandler
+	Auth  *handler.AuthHandler
+	User  *handler.UserHandler
+	Space *handler.SpaceHandler
 	// Note *handler.NoteHandler
 }
 
 func New(addr string, h Handlers, requireAuth func(http.Handler) http.Handler) *http.Server {
 	mux := http.NewServeMux()
-
-
 
 	// Public routes
 	mux.HandleFunc("GET /health", handler.Health)
@@ -28,6 +26,11 @@ func New(addr string, h Handlers, requireAuth func(http.Handler) http.Handler) *
 
 	// Protected routes
 	mux.Handle("GET /users/me", requireAuth(http.HandlerFunc(h.User.Me)))
+	mux.Handle("GET /spaces", requireAuth(http.HandlerFunc(h.Space.List)))
+	mux.Handle("POST /spaces", requireAuth(http.HandlerFunc(h.Space.Create)))
+	mux.Handle("GET /spaces/{spaceId}", requireAuth(http.HandlerFunc(h.Space.Get)))
+	mux.Handle("PUT /spaces/{spaceId}", requireAuth(http.HandlerFunc(h.Space.Update)))
+	mux.Handle("DELETE /spaces/{spaceId}", requireAuth(http.HandlerFunc(h.Space.Delete)))
 
 	return &http.Server{
 		Addr:              addr,

@@ -58,7 +58,7 @@ func run(logger *slog.Logger) error {
 
 	// Creating Repositories
 	userRepository := repository.NewUserRepository(pool)
-	//spaceRepository := repository.NewSpaceRepository(pool)
+	spaceRepository := repository.NewSpaceRepository(pool)
 	//noteRepository := repository.NewNoteRepository(pool)
 
 	// Starting authentication tools
@@ -71,10 +71,13 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 
+	spaceService := service.NewSpaceService(spaceRepository)
+
 	// Creating handlers and server
 	handlers := server.Handlers{
 		Auth: handler.NewAuthHandler(authService),
 		User: handler.NewUserHandler(authService),
+		Space: handler.NewSpaceHandler(spaceService),
 	}
 
 	requireAuth := middleware.Authenticate(tokenManager)
