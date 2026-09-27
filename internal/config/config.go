@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -14,6 +15,8 @@ type Config struct {
 	Port        int
 	Address     string
 	DatabaseCfg *DatabaseConfig
+	HashingCfg  *HashingConfig
+	TokenCfg    *TokenConfig
 }
 
 type DatabaseConfig struct {
@@ -22,6 +25,15 @@ type DatabaseConfig struct {
 	Database string
 	Host     string
 	Port     int
+}
+
+type HashingConfig struct {
+	Cost int
+}
+
+type TokenConfig struct {
+	Secret string
+	TTL    time.Duration
 }
 
 func LoadConfig() (*Config, error) {
@@ -47,10 +59,39 @@ func LoadConfig() (*Config, error) {
 		Port:     getEnvOrDefaultPort("DB_PORT", 5432),
 	}
 
+	bcryptCost := getEnvOrDefaultInt("BCRYPT_COST", 12)
+	if !inRange(10, 14, bcryptCost) { // Enforced minimal hash security and prevent absurd level of hashing
+		return nil, fmt.Errorf("BCRYPT_COST must be between %d and %d", 10, 14)
+	}
+
+	hashingCfg := &HashingConfig{
+		Cost: bcryptCost,
+	}
+
+	secretJWT, err := requireEnv("JWT_SECRET")
+	if err != nil {
+		return nil, err
+	}
+	if !inRange(32, 256, len(secretJWT)) {
+		return nil, fmt.Errorf("JWT_SECRET length must be between 32 and 256 inclusive")
+	}
+
+	ttl := getEnvOrDefaultDuration("JWT_TTL", time.Hour)
+	if ttl < time.Minute*5 && ttl > time.Hour*24 { // Prevent absurdly low or high jwt validity duration
+		return nil, fmt.Errorf("JWT_TTL must be between 5 minute and 24 hours")
+	}
+
+	tokenCfg := &TokenConfig{
+		Secret: secretJWT,
+		TTL:    ttl,
+	}
+
 	cfg := &Config{
 		Port:        getEnvOrDefaultPort("PORT", 8080),
 		Address:     getEnvOrDefault("ADDRESS", "localhost"),
 		DatabaseCfg: dbCfg,
+		HashingCfg:  hashingCfg,
+		TokenCfg:    tokenCfg,
 	}
 
 	return cfg, nil
