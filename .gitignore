@@ -33,3 +33,8 @@ go.work.sum
 
 # Binaries built by make build
 bin/
+
+# TLS certificates and private keys (never commit a private key)
+certs/
+*.pem
+*.key

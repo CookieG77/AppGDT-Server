@@ -18,6 +18,7 @@ type Config struct {
 	HashingCfg  *HashingConfig
 	TokenCfg    *TokenConfig
 	LoginCfg    *LoginLimitConfig
+	TLSCfg      *TLSConfig
 }
 
 type DatabaseConfig struct {
@@ -35,6 +36,17 @@ type HashingConfig struct {
 type TokenConfig struct {
 	Secret string
 	TTL    time.Duration
+}
+
+// TLSConfig enables HTTPS when a certificate and its private key are given.
+type TLSConfig struct {
+	CertFile string
+	KeyFile  string
+}
+
+// Enabled reports whether the API must be served over HTTPS.
+func (t *TLSConfig) Enabled() bool {
+	return t.CertFile != "" && t.KeyFile != ""
 }
 
 type LoginLimitConfig struct {
@@ -114,6 +126,15 @@ func LoadConfig() (*Config, error) {
 		Window:      loginWindow,
 	}
 
+	// HTTPS is optional: both files must be given together, or none
+	tlsCfg := &TLSConfig{
+		CertFile: getEnvOrDefault("TLS_CERT_FILE", ""),
+		KeyFile:  getEnvOrDefault("TLS_KEY_FILE", ""),
+	}
+	if (tlsCfg.CertFile == "") != (tlsCfg.KeyFile == "") {
+		return nil, fmt.Errorf("TLS_CERT_FILE and TLS_KEY_FILE must be set together")
+	}
+
 	cfg := &Config{
 		Port:        getEnvOrDefaultPort("PORT", 8080),
 		Address:     getEnvOrDefault("ADDRESS", "localhost"),
@@ -121,6 +142,7 @@ func LoadConfig() (*Config, error) {
 		HashingCfg:  hashingCfg,
 		TokenCfg:    tokenCfg,
 		LoginCfg:    loginCfg,
+		TLSCfg:      tlsCfg,
 	}
 
 	return cfg, nil

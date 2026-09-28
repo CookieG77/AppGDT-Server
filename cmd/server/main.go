@@ -99,11 +99,20 @@ func run(logger *slog.Logger) error {
 	addr := cfg.Address + ":" + strconv.Itoa(cfg.Port)
 	srv := server.New(addr, handlers, requireAuth)
 
+	// HTTPS between the clients (the web client) and the API, if a certificate is configured
+	scheme := "http"
+	if cfg.TLSCfg.Enabled() {
+		if srv.TLSConfig, err = server.LoadTLSConfig(cfg.TLSCfg.CertFile, cfg.TLSCfg.KeyFile); err != nil {
+			return err
+		}
+		scheme = "https"
+	}
+
 	// Starting the server in a goroutine to prevent a freeze of the exit signal waiter
 	servErr := make(chan error, 1)
 	go func() {
-		logger.Info("server starting", "addr", addr)
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		logger.Info("server starting", "addr", addr, "url", scheme+"://"+addr)
+		if err := listen(srv); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			servErr <- err
 		}
 	}()
@@ -126,4 +135,13 @@ func run(logger *slog.Logger) error {
 
 	logger.Info("server stopped")
 	return nil
+}
+
+// listen serves HTTPS when the server has a TLS config, HTTP otherwise.
+func listen(srv *http.Server) error {
+	if srv.TLSConfig != nil {
+		// The certificate is already loaded in TLSConfig
+		return srv.ListenAndServeTLS("", "")
+	}
+	return srv.ListenAndServe()
 }

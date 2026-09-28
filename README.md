@@ -83,6 +83,23 @@ Ces variables sont partagées entre Docker Compose, qui crée la base, et le ser
 
 Voir [Limitation des tentatives de connexion](#limitation-des-tentatives-de-connexion-1) (section API) pour le fonctionnement.
 
+### HTTPS (optionnel)
+
+| Variable        | Obligatoire | Défaut | Description                                              |
+|-----------------|-------------|--------|----------------------------------------------------------|
+| `TLS_CERT_FILE` | Non         |        | Certificat TLS (PEM). Active HTTPS avec `TLS_KEY_FILE`    |
+| `TLS_KEY_FILE`  | Non         |        | Clé privée du certificat (PEM)                           |
+
+Sans ces variables, l'API est servie en HTTP. Avec les deux, elle n'accepte plus que HTTPS (TLS 1.2 minimum) : les échanges avec le client web, qui contiennent le JWT et le contenu des notes, sont alors chiffrés. Un certificat de développement se génère par exemple avec [mkcert](https://github.com/FiloSottile/mkcert) :
+
+```bash
+mkcert -install
+mkdir certs
+mkcert -cert-file certs/api.pem -key-file certs/api-key.pem localhost 127.0.0.1 ::1
+```
+
+Côté client web, indiquer alors `API_BASE_URL=https://localhost:8080`, et `API_CA_FILE` si l'autorité du certificat n'est pas reconnue par le système (voir le README d'[AppGDT-Client](https://github.com/CookieG77/AppGDT-Client)). Les certificats et clés (`certs/`, `*.pem`, `*.key`) ne doivent jamais être versionnés.
+
 Le serveur refuse de démarrer si une variable obligatoire est absente ou si une valeur sort des plages autorisées.
 
 Pour générer une clé `JWT_SECRET` aléatoire :
