@@ -375,7 +375,7 @@ Chaque exécution compte 7 connexions échouées pour l'IP du poste de test. Ave
 ├── cmd/
 │   ├── server/           # Point d'entrée de l'API : assemblage des dépendances et cycle de vie du serveur
 │   └── seed/             # Outil en ligne de commande : création des comptes de démonstration
-├── docs/                 # Journal des choix techniques, schéma de la base
+├── docs/                 # Schéma de la base et notes de travail
 ├── internal/
 │   ├── auth/             # Hachage des mots de passe (bcrypt) et gestion des JWT
 │   ├── config/           # Lecture et validation de la configuration
@@ -400,7 +400,6 @@ Chaque requête traverse les couches dans cet ordre : `middleware` → `handler`
 
 ## Documentation
 
-- [Journal des choix techniques](docs/NOTES.md)
 - [Schéma relationnel de la base de données](docs/database-schema.drawio.svg)
 - [Contrat de l'API (OpenAPI)](api/openapi.yaml)
 
