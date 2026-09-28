@@ -4,7 +4,7 @@ Serveur backend de l'application **GDT**, une application web de gestion de note
 
 Il expose une API REST développée en Go, responsable de la logique métier, de l'accès aux données, de l'authentification, de la validation des données et du contrôle d'accès.
 
-> 🚧 Projet en cours de développement : l'API (authentification, espaces et notes) est fonctionnelle et couverte par une collection de tests Postman. Les comptes de démonstration et plusieurs améliorations (journalisation, robustesse) restent à ajouter.
+> 🚧 Projet en cours de développement : l'API (authentification, espaces et notes) est fonctionnelle et couverte par une collection de tests Postman. Les comptes de démonstration et plusieurs améliorations (robustesse, sécurité) restent à ajouter.
 
 ## Stack technique
 
@@ -113,6 +113,27 @@ curl http://localhost:8080/health
 ```
 
 Le serveur s'arrête proprement avec `Ctrl+C` : les requêtes en cours ont jusqu'à 10 secondes pour se terminer.
+
+## Journalisation
+
+Les logs sont écrits au format JSON sur la sortie standard, une ligne par événement. Ils sont de trois types :
+
+- **Requêtes** (`"msg": "request handled"`) : une ligne par requête avec la méthode, le chemin, le statut, la taille de la réponse, la durée et l'IP du client. Le niveau dépend du statut : `INFO` pour un succès, `WARN` pour une erreur client (4xx), `ERROR` pour une erreur serveur (5xx).
+- **Événements de sécurité** (`"msg": "security event"`) : filtrables par leur attribut `event`, ils incluent toujours l'IP du client.
+- **Actions métier** : création, modification et suppression des espaces et des notes, avec leur identifiant.
+
+| Événement de sécurité   | Niveau | Déclencheur                                                              |
+|-------------------------|--------|--------------------------------------------------------------------------|
+| `user_registered`       | `INFO` | Création d'un compte                                                     |
+| `registration_rejected` | `INFO` | Inscription avec une adresse déjà utilisée                               |
+| `login_succeeded`       | `INFO` | Connexion réussie                                                        |
+| `login_failed`          | `WARN` | Connexion refusée, avec la raison (email inconnu, mauvais mot de passe)  |
+| `token_rejected`        | `WARN` | Token invalide, falsifié ou expiré                                       |
+| `resource_not_found`    | `INFO` | Ressource inexistante ou appartenant à un autre utilisateur              |
+
+Chaque requête reçoit un identifiant, renvoyé dans l'en-tête de réponse `X-Request-ID` et ajouté à tous les logs écrits pendant son traitement, avec l'identifiant de l'utilisateur connecté (`userID`). Un client peut transmettre son propre identifiant dans ce même en-tête pour suivre une requête de bout en bout ; il est réutilisé s'il est valide (64 caractères max, lettres, chiffres, `.`, `_` et `-`).
+
+Les raisons précises d'un échec de connexion n'apparaissent que dans les logs : le client reçoit toujours la même erreur. Aucune donnée personnelle n'est journalisée (ni email, ni mot de passe, ni token, ni corps de requête) : les utilisateurs sont identifiés uniquement par leur identifiant.
 
 ## Migrations
 
@@ -241,7 +262,8 @@ L'adresse de l'API se règle dans la variable de collection `baseUrl` (`http://l
 │   ├── domain/           # Entités métier et erreurs partagées entre les couches
 │   ├── handler/          # Couche HTTP : lecture des requêtes, écriture des réponses
 │   ├── httpjson/         # Lecture et écriture du JSON, format d'erreur commun
-│   ├── middleware/       # Middleware d'authentification
+│   ├── logging/          # Contexte des logs (identifiant de requête, utilisateur) et événements de sécurité
+│   ├── middleware/       # Middlewares d'authentification et de journalisation des requêtes
 │   ├── repository/       # Accès aux données (requêtes SQL)
 │   ├── server/           # Déclaration des routes et configuration du serveur HTTP
 │   └── service/          # Logique métier et validation

@@ -10,6 +10,10 @@ info:
     Un utilisateur ne peut accéder qu'à ses propres espaces et notes : toute ressource
     appartenant à un autre utilisateur est traitée comme inexistante (réponse 404).
 
+    Chaque réponse contient un en-tête `X-Request-ID` identifiant la requête dans les logs
+    du serveur. Un client peut envoyer son propre identifiant dans ce même en-tête
+    (64 caractères max : lettres, chiffres, `.`, `_` et `-`) ; il est alors réutilisé.
+
 servers:
   - url: http://localhost:8080
     description: Environnement local
