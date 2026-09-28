@@ -16,6 +16,7 @@ import (
 	"github.com/CookieG77/AppGDT-Server/internal/auth"
 	"github.com/CookieG77/AppGDT-Server/internal/domain"
 	"github.com/CookieG77/AppGDT-Server/internal/logging"
+	"github.com/CookieG77/AppGDT-Server/internal/ratelimit"
 	"github.com/CookieG77/AppGDT-Server/internal/repository"
 )
 
@@ -27,11 +28,22 @@ const (
 	passwordMaxBytes  = 72 // bcrypt only uses the first 72 bytes of a password
 )
 
+// LoginLimiters limit the failed logins, to slow down password guessing:
+//   - ByEmail protects each account against a targeted attack. It counts the
+//     failures per email, whether an account exists or not, so that a
+//     blocked email does not reveal whether it is registered;
+//   - ByIP limits a single client trying passwords on many accounts.
+type LoginLimiters struct {
+	ByIP    *ratelimit.Limiter
+	ByEmail *ratelimit.Limiter
+}
+
 // AuthService handles registration, login and access to the current user.
 type AuthService struct {
 	users  *repository.UserRepository
 	hasher *auth.PasswordHasher
 	tokens *auth.TokenManager
+	limits LoginLimiters
 
 	// dummyHash is compared against when a login targets an unknown email,
 	// so that the response time does not reveal whether an account exists.
@@ -40,7 +52,7 @@ type AuthService struct {
 
 // NewAuthService creates an AuthService. It returns an error if the dummy
 // hash used for timing protection cannot be computed.
-func NewAuthService(users *repository.UserRepository, hasher *auth.PasswordHasher, tokens *auth.TokenManager) (*AuthService, error) {
+func NewAuthService(users *repository.UserRepository, hasher *auth.PasswordHasher, tokens *auth.TokenManager, limits LoginLimiters) (*AuthService, error) {
 	dummyHash, err := hasher.HashPassword("dummy-password-for-timing-protection")
 	if err != nil {
 		return nil, fmt.Errorf("creating auth service: %w", err)
@@ -50,6 +62,7 @@ func NewAuthService(users *repository.UserRepository, hasher *auth.PasswordHashe
 		users:     users,
 		hasher:    hasher,
 		tokens:    tokens,
+		limits:    limits,
 		dummyHash: dummyHash,
 	}, nil
 }
@@ -90,8 +103,10 @@ func (s *AuthService) Register(ctx context.Context, email, username, password st
 
 // Login checks the credentials and returns a signed token.
 // It returns domain.ErrInvalidCredentials whether the email is unknown or
-// the password is wrong, so that the caller cannot tell which one failed.
-func (s *AuthService) Login(ctx context.Context, email, password string) (string, error) {
+// the password is wrong, so that the caller cannot tell which one failed,
+// and a *domain.TooManyAttemptsError if too many logins failed recently for
+// this email or this client IP.
+func (s *AuthService) Login(ctx context.Context, email, password, clientIP string) (string, error) {
 	email = normalizeEmail(email)
 
 	vErr := &domain.ValidationError{}
@@ -105,9 +120,16 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 		return "", vErr
 	}
 
+	// The limits are checked before the password: while blocked, even the
+	// right password is refused, otherwise guessing could go on.
+	if err := s.checkLoginLimits(ctx, email, clientIP); err != nil {
+		return "", err
+	}
+
 	// No account can have a password longer than bcrypt's limit.
 	if len(password) > passwordMaxBytes {
 		s.simulatePasswordCheck(password)
+		s.recordFailedLogin(ctx, email, clientIP)
 		logging.Security(ctx, slog.LevelWarn, "login_failed", "reason", "password too long")
 		return "", domain.ErrInvalidCredentials
 	}
@@ -115,6 +137,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 	user, err := s.users.GetByEmail(ctx, email)
 	if errors.Is(err, domain.ErrNotFound) {
 		s.simulatePasswordCheck(password)
+		s.recordFailedLogin(ctx, email, clientIP)
 		logging.Security(ctx, slog.LevelWarn, "login_failed", "reason", "unknown email")
 		return "", domain.ErrInvalidCredentials
 	}
@@ -124,6 +147,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 
 	err = s.hasher.CheckPassword(user.PasswordHash, password)
 	if errors.Is(err, auth.ErrPasswordMismatch) {
+		s.recordFailedLogin(ctx, email, clientIP)
 		logging.Security(ctx, slog.LevelWarn, "login_failed", "reason", "wrong password", "targetUserID", user.ID)
 		return "", domain.ErrInvalidCredentials
 	}
@@ -136,8 +160,47 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 		return "", fmt.Errorf("logging in: %w", err)
 	}
 
+	// The IP counter is not reset: otherwise an attacker could clear it by
+	// logging into their own account between two guesses.
+	s.limits.ByEmail.Reset(email)
+
 	logging.Security(ctx, slog.LevelInfo, "login_succeeded", "targetUserID", user.ID)
 	return token, nil
+}
+
+// checkLoginLimits returns a *domain.TooManyAttemptsError if the email or the
+// client IP is blocked, with the longest of the remaining waiting times.
+func (s *AuthService) checkLoginLimits(ctx context.Context, email, clientIP string) error {
+	emailAllowed, emailWait := s.limits.ByEmail.Allow(email)
+	ipAllowed, ipWait := s.limits.ByIP.Allow(clientIP)
+	if emailAllowed && ipAllowed {
+		return nil
+	}
+
+	var scope string
+	switch {
+	case !emailAllowed && !ipAllowed:
+		scope = "email and ip"
+	case !emailAllowed:
+		scope = "email"
+	default:
+		scope = "ip"
+	}
+
+	retryAfter := max(emailWait, ipWait)
+	logging.Security(ctx, slog.LevelWarn, "login_blocked", "scope", scope, "retryAfterSeconds", int(retryAfter.Seconds()))
+	return &domain.TooManyAttemptsError{RetryAfter: retryAfter}
+}
+
+// recordFailedLogin counts a failed login for the email and the client IP,
+// and logs a security event when one of them becomes blocked.
+func (s *AuthService) recordFailedLogin(ctx context.Context, email, clientIP string) {
+	if s.limits.ByEmail.Fail(email) {
+		logging.Security(ctx, slog.LevelWarn, "login_locked", "scope", "email")
+	}
+	if s.limits.ByIP.Fail(clientIP) {
+		logging.Security(ctx, slog.LevelWarn, "login_locked", "scope", "ip")
+	}
 }
 
 // GetCurrentUser returns the user with the given ID.

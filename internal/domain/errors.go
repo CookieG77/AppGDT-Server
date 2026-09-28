@@ -2,13 +2,26 @@
 // As well as the data struct for the users, spaces and notes and their associated fields
 package domain
 
-import "errors"
+import (
+	"errors"
+	"time"
+)
 
 var (
 	ErrNotFound           = errors.New("resource not found")
 	ErrEmailUsed          = errors.New("email already used")
 	ErrInvalidCredentials = errors.New("invalid credentials")
 )
+
+// TooManyAttemptsError is returned when a login is refused because too many
+// attempts failed recently. RetryAfter tells how long to wait before trying again.
+type TooManyAttemptsError struct {
+	RetryAfter time.Duration
+}
+
+func (e *TooManyAttemptsError) Error() string {
+	return "too many failed attempts"
+}
 
 // FieldError represents a validation failure of a single field
 type FieldError struct {

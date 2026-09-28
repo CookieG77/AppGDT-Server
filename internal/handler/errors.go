@@ -3,7 +3,9 @@ package handler
 import (
 	"errors"
 	"log/slog"
+	"math"
 	"net/http"
+	"strconv"
 
 	"github.com/CookieG77/AppGDT-Server/internal/domain"
 	"github.com/CookieG77/AppGDT-Server/internal/httpjson"
@@ -14,11 +16,20 @@ import (
 // matching HTTP response. Unexpected errors are logged in detail and
 // answered with a generic 500, so that no internal detail reaches the client.
 func writeServiceError(w http.ResponseWriter, r *http.Request, err error) {
-	var vErr *domain.ValidationError
+	var (
+		vErr    *domain.ValidationError
+		tooMany *domain.TooManyAttemptsError
+	)
 
 	switch {
 	case errors.As(err, &vErr):
 		httpjson.WriteValidationError(w, vErr)
+
+	case errors.As(err, &tooMany):
+		// Retry-After is expressed in whole seconds, rounded up so that a
+		// client waiting for it is never refused again.
+		w.Header().Set("Retry-After", strconv.Itoa(int(math.Ceil(tooMany.RetryAfter.Seconds()))))
+		httpjson.WriteError(w, http.StatusTooManyRequests, "TOO_MANY_ATTEMPTS", "Trop de tentatives de connexion échouées. Veuillez réessayer plus tard.")
 
 	case errors.Is(err, domain.ErrInvalidCredentials):
 		httpjson.WriteError(w, http.StatusUnauthorized, "INVALID_CREDENTIALS", "Email ou mot de passe incorrect.")

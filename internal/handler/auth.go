@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/CookieG77/AppGDT-Server/internal/httpjson"
+	"github.com/CookieG77/AppGDT-Server/internal/logging"
 	"github.com/CookieG77/AppGDT-Server/internal/service"
 )
 
@@ -61,7 +62,13 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.auth.Login(r.Context(), input.Email, input.Password)
+	// The client IP set by the request logger is used to limit failed logins.
+	clientIP := logging.ClientIP(r.Context())
+	if clientIP == "" {
+		clientIP = r.RemoteAddr
+	}
+
+	token, err := h.auth.Login(r.Context(), input.Email, input.Password, clientIP)
 	if err != nil {
 		writeServiceError(w, r, err)
 		return

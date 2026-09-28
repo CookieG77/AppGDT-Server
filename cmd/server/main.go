@@ -18,6 +18,7 @@ import (
 	"github.com/CookieG77/AppGDT-Server/internal/handler"
 	"github.com/CookieG77/AppGDT-Server/internal/logging"
 	"github.com/CookieG77/AppGDT-Server/internal/middleware"
+	"github.com/CookieG77/AppGDT-Server/internal/ratelimit"
 	"github.com/CookieG77/AppGDT-Server/internal/repository"
 	"github.com/CookieG77/AppGDT-Server/internal/server"
 	"github.com/CookieG77/AppGDT-Server/internal/service"
@@ -68,8 +69,14 @@ func run(logger *slog.Logger) error {
 	passwordHasher := auth.NewPasswordHasher(cfg.HashingCfg.Cost)
 	tokenManager := auth.NewTokenManager(cfg.TokenCfg.Secret, cfg.TokenCfg.TTL)
 
+	// Limits on failed logins, kept in memory
+	loginLimiters := service.LoginLimiters{
+		ByEmail: ratelimit.New(cfg.LoginCfg.MaxPerEmail, cfg.LoginCfg.Window),
+		ByIP:    ratelimit.New(cfg.LoginCfg.MaxPerIP, cfg.LoginCfg.Window),
+	}
+
 	// Starting services
-	authService, err := service.NewAuthService(userRepository, passwordHasher, tokenManager)
+	authService, err := service.NewAuthService(userRepository, passwordHasher, tokenManager, loginLimiters)
 	if err != nil {
 		return err
 	}
