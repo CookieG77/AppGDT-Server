@@ -4,7 +4,7 @@ Serveur backend de l'application **GDT**, une application web de gestion de note
 
 Il expose une API REST développée en Go, responsable de la logique métier, de l'accès aux données, de l'authentification, de la validation des données et du contrôle d'accès.
 
-> 🚧 Projet en cours de développement : l'API (authentification, espaces et notes) est fonctionnelle et couverte par une collection de tests Postman. Les comptes de démonstration et plusieurs améliorations (robustesse, sécurité) restent à ajouter.
+> 🚧 Projet en cours de développement : l'API est complète (authentification, espaces, notes, droits RGPD) et couverte par une collection de tests Postman. Restent à ajouter : les comptes de démonstration et les tests unitaires Go.
 
 ## Stack technique
 
