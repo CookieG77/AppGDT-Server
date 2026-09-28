@@ -81,6 +81,7 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 
+	accountService := service.NewAccountService(userRepository, spaceRepository, noteRepository, passwordHasher, loginLimiters)
 	spaceService := service.NewSpaceService(spaceRepository)
 	noteService := service.NewNoteService(noteRepository, spaceRepository)
 
@@ -88,12 +89,12 @@ func run(logger *slog.Logger) error {
 	handlers := server.Handlers{
 		Health: handler.NewHealthHandler(pool),
 		Auth:   handler.NewAuthHandler(authService),
-		User:   handler.NewUserHandler(authService),
+		User:   handler.NewUserHandler(authService, accountService),
 		Space:  handler.NewSpaceHandler(spaceService),
 		Note:   handler.NewNoteHandler(noteService),
 	}
 
-	requireAuth := middleware.Authenticate(tokenManager)
+	requireAuth := middleware.Authenticate(tokenManager, userRepository)
 
 	addr := cfg.Address + ":" + strconv.Itoa(cfg.Port)
 	srv := server.New(addr, handlers, requireAuth)

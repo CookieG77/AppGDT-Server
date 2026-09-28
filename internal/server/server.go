@@ -28,6 +28,8 @@ func New(addr string, h Handlers, requireAuth func(http.Handler) http.Handler) *
 
 	// Protected routes
 	mux.Handle("GET /users/me", requireAuth(http.HandlerFunc(h.User.Me)))
+	mux.Handle("DELETE /users/me", requireAuth(http.HandlerFunc(h.User.DeleteMe)))
+	mux.Handle("GET /users/me/export", requireAuth(http.HandlerFunc(h.User.Export)))
 	mux.Handle("GET /spaces", requireAuth(http.HandlerFunc(h.Space.List)))
 	mux.Handle("POST /spaces", requireAuth(http.HandlerFunc(h.Space.Create)))
 	mux.Handle("GET /spaces/{spaceId}", requireAuth(http.HandlerFunc(h.Space.Get)))

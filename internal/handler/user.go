@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -11,12 +12,13 @@ import (
 
 // UserHandler exposes the routes of the authenticated user.
 type UserHandler struct {
-	auth *service.AuthService
+	auth    *service.AuthService
+	account *service.AccountService
 }
 
-// NewUserHandler creates a UserHandler using the given service.
-func NewUserHandler(auth *service.AuthService) *UserHandler {
-	return &UserHandler{auth: auth}
+// NewUserHandler creates a UserHandler using the given services.
+func NewUserHandler(auth *service.AuthService, account *service.AccountService) *UserHandler {
+	return &UserHandler{auth: auth, account: account}
 }
 
 // Me handles GET /users/me.
@@ -36,4 +38,51 @@ func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httpjson.WriteJSON(w, http.StatusOK, user)
+}
+
+// deleteAccountInput is the request body of DELETE /users/me.
+type deleteAccountInput struct {
+	Password string `json:"password"`
+}
+
+// DeleteMe handles DELETE /users/me: it deletes the account of the
+// authenticated user and all their data, after checking their password.
+func (h *UserHandler) DeleteMe(w http.ResponseWriter, r *http.Request) {
+	userID, ok := currentUserID(w, r)
+	if !ok {
+		return
+	}
+
+	var input deleteAccountInput
+	if err := httpjson.DecodeJSON(w, r, &input); err != nil {
+		httpjson.WriteError(w, http.StatusBadRequest, "INVALID_JSON", err.Error())
+		return
+	}
+
+	if err := h.account.DeleteAccount(r.Context(), userID, input.Password); err != nil {
+		writeServiceError(w, r, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// Export handles GET /users/me/export: it returns all the data of the
+// authenticated user as a JSON file to download.
+func (h *UserHandler) Export(w http.ResponseWriter, r *http.Request) {
+	userID, ok := currentUserID(w, r)
+	if !ok {
+		return
+	}
+
+	export, err := h.account.Export(r.Context(), userID)
+	if err != nil {
+		writeServiceError(w, r, err)
+		return
+	}
+
+	// Asks browsers to download the response as a file rather than display it.
+	filename := fmt.Sprintf("gdt-export-%s.json", export.ExportedAt.Format("2006-01-02"))
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
+	httpjson.WriteJSON(w, http.StatusOK, export)
 }

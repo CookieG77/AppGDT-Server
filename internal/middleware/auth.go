@@ -20,9 +20,19 @@ type contextKey struct{}
 // userIDKey is the key under which the authenticated user ID is stored.
 var userIDKey = contextKey{}
 
+// UserChecker is implemented by anything that can tell whether a user still
+// exists, such as the user repository.
+type UserChecker interface {
+	Exists(ctx context.Context, userID int64) (bool, error)
+}
+
 // Authenticate returns a middleware that rejects requests without a valid
 // Bearer token, and stores the authenticated user ID in the request context.
-func Authenticate(tokens *auth.TokenManager) func(http.Handler) http.Handler {
+//
+// It also checks that the user still exists: a token stays valid until it
+// expires, so without this check, the token of a deleted account would keep
+// giving access to the API.
+func Authenticate(tokens *auth.TokenManager, users UserChecker) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			tokenString, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
@@ -35,6 +45,19 @@ func Authenticate(tokens *auth.TokenManager) func(http.Handler) http.Handler {
 			if err != nil {
 				logging.Security(r.Context(), slog.LevelWarn, "token_rejected",
 					"reason", err.Error(), "method", r.Method, "path", r.URL.Path)
+				unauthorized(w)
+				return
+			}
+
+			exists, err := users.Exists(r.Context(), userID)
+			if err != nil {
+				slog.ErrorContext(r.Context(), "checking user existence failed", "error", err)
+				httpjson.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Une erreur interne est survenue.")
+				return
+			}
+			if !exists {
+				logging.Security(r.Context(), slog.LevelWarn, "token_rejected",
+					"reason", "user no longer exists", "method", r.Method, "path", r.URL.Path)
 				unauthorized(w)
 				return
 			}
