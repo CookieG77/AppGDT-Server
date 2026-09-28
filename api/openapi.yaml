@@ -2,7 +2,7 @@ openapi: 3.1.0
 
 info:
   title: GDT API
-  version: 0.2.0
+  version: 1.0.0
   description: |
     API REST de gestion de notes organisées par espaces.
 
