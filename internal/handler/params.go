@@ -15,7 +15,7 @@ import (
 func currentUserID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	userID, ok := middleware.UserIDFromContext(r.Context())
 	if !ok {
-		slog.Error("missing user ID in context", "method", r.Method, "path", r.URL.Path)
+		slog.ErrorContext(r.Context(), "missing user ID in context", "method", r.Method, "path", r.URL.Path)
 		httpjson.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Une erreur interne est survenue.")
 		return 0, false
 	}

@@ -16,6 +16,7 @@ import (
 	"github.com/CookieG77/AppGDT-Server/internal/config"
 	"github.com/CookieG77/AppGDT-Server/internal/database"
 	"github.com/CookieG77/AppGDT-Server/internal/handler"
+	"github.com/CookieG77/AppGDT-Server/internal/logging"
 	"github.com/CookieG77/AppGDT-Server/internal/middleware"
 	"github.com/CookieG77/AppGDT-Server/internal/repository"
 	"github.com/CookieG77/AppGDT-Server/internal/server"
@@ -23,7 +24,9 @@ import (
 )
 
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	// Every log written with a request context also gets the request ID and
+	// the authenticated user ID (see the logging package)
+	logger := slog.New(logging.NewContextHandler(slog.NewJSONHandler(os.Stdout, nil)))
 	slog.SetDefault(logger)
 
 	if err := run(logger); err != nil {
