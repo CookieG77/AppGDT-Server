@@ -4,7 +4,7 @@ Serveur backend de l'application **GDT**, une application web de gestion de note
 
 Il expose une API REST développée en Go, responsable de la logique métier, de l'accès aux données, de l'authentification, de la validation des données et du contrôle d'accès.
 
-> 🚧 Projet en cours de développement : l'API est complète (authentification, espaces, notes, droits RGPD) et couverte par une collection de tests Postman. Des comptes de démonstration peuvent être créés en une commande. Restent à ajouter : les tests unitaires Go.
+L'API est complète (authentification, espaces, notes, droits RGPD), couverte par une collection de tests Postman, et fournie avec un outil de création de comptes de démonstration. Le client web qui l'utilise est dans le dépôt [AppGDT-Client](https://github.com/CookieG77/AppGDT-Client).
 
 ## Stack technique
 
@@ -19,6 +19,7 @@ Il expose une API REST développée en Go, responsable de la logique métier, de
 - [Go](https://go.dev/dl/) (version indiquée dans `go.mod`)
 - [Docker](https://docs.docker.com/get-docker/) et Docker Compose
 - Git
+- `make` (facultatif, voir [Commandes `make`](#commandes-make))
 
 ## Installation
 
@@ -97,6 +98,29 @@ openssl rand -base64 32
 ```
 
 ## Lancement
+
+### Commandes `make`
+
+Les commandes courantes sont regroupées dans un `Makefile` (`make help` pour la liste). Sous Windows, installer `make` une fois : `winget install ezwinports.make` (ou `choco install make`, ou `scoop install make`), puis rouvrir le terminal. Chaque cible reste une simple commande `go` ou `docker`, utilisable directement sans `make`.
+
+| Cible | Commande équivalente | Rôle |
+|---|---|---|
+| `make db-up` / `make db-down` | `docker compose up -d` / `docker compose down` | Démarrer / arrêter PostgreSQL |
+| `make run` | `go run ./cmd/server` | Lancer l'API |
+| `make seed` / `make seed-reset` | `go run ./cmd/seed [-reset]` | Créer / recréer les comptes de démonstration |
+| `make build` | `go build -o bin/gdt-server ./cmd/server` | Compiler l'API dans `bin/` (`.exe` sous Windows) |
+| `make test`, `make vet`, `make fmt` | `go test ./...`, `go vet ./...`, `go fmt ./...` | Tests, analyse statique, formatage |
+| `make clean` | | Supprimer `bin/` |
+
+Démarrage complet en local :
+
+```bash
+make db-up     # 1. base de données
+make seed      # 2. comptes de démonstration (facultatif)
+make run       # 3. API sur http://localhost:8080
+```
+
+Les étapes sont détaillées ci-dessous.
 
 ### 1. Démarrer la base de données
 
@@ -350,6 +374,7 @@ Chaque exécution compte 7 connexions échouées pour l'IP du poste de test. Ave
 │   └── service/          # Logique métier et validation
 ├── migrations/           # Migrations SQL, embarquées dans le binaire
 ├── docker-compose.yml
+├── Makefile              # Commandes courantes (make help)
 └── .env.example
 ```
 
