@@ -11,6 +11,9 @@ var (
 	ErrNotFound           = errors.New("resource not found")
 	ErrEmailUsed          = errors.New("email already used")
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	// ErrWrongPassword is returned when the password confirming a sensitive
+	// action of an authenticated user (such as deleting their account) is wrong.
+	ErrWrongPassword = errors.New("wrong password")
 )
 
 // TooManyAttemptsError is returned when a login is refused because too many

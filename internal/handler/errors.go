@@ -29,10 +29,15 @@ func writeServiceError(w http.ResponseWriter, r *http.Request, err error) {
 		// Retry-After is expressed in whole seconds, rounded up so that a
 		// client waiting for it is never refused again.
 		w.Header().Set("Retry-After", strconv.Itoa(int(math.Ceil(tooMany.RetryAfter.Seconds()))))
-		httpjson.WriteError(w, http.StatusTooManyRequests, "TOO_MANY_ATTEMPTS", "Trop de tentatives de connexion échouées. Veuillez réessayer plus tard.")
+		httpjson.WriteError(w, http.StatusTooManyRequests, "TOO_MANY_ATTEMPTS", "Trop de tentatives échouées. Veuillez réessayer plus tard.")
 
 	case errors.Is(err, domain.ErrInvalidCredentials):
 		httpjson.WriteError(w, http.StatusUnauthorized, "INVALID_CREDENTIALS", "Email ou mot de passe incorrect.")
+
+	case errors.Is(err, domain.ErrWrongPassword):
+		// 403 rather than 401: the user is authenticated, and a 401 could
+		// make the client believe that the session has expired.
+		httpjson.WriteError(w, http.StatusForbidden, "INVALID_PASSWORD", "Mot de passe incorrect.")
 
 	case errors.Is(err, domain.ErrNotFound):
 		// A burst of these events from the same user may reveal an attempt
