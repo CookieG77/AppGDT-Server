@@ -78,3 +78,6 @@ ainsi que des justifications associées.
 - Avant de passer à la partie client, j'ai mis en place un nouveau endpoint d'api pour pouvoir exercer le droit à la portabilité (elle retourne les infos de l'utilisateur en json).
   J'ai aussi rajouté une nouvelle méthode prise en charge par l'endpoint 'DELETE /users/me' pour pouvoir exercer le droit à l'effacement. Par précaution le serveur demande le mot de passe de l'utilisateur, mais si on avait une sécurité plus forte, un service SMTP et/ou une double authentification avec un code OTP, il faudrait mêtre en place des mesures plus stricte pour pouvoir supprimer son compte.
   Par exemple, avoir accès au mail ou avec un code OTP avant de pouvoir valider la suppression. 
+
+- J'ai décidé de temporairement ne pas créer de fichiers de tests go pour me concentrer sur la création du client. Mais si j'ai le temps, j'y reviendrai.
+  Autrement, je pourrais aussi utiliser une IA pour générer les fichiers en batch.
