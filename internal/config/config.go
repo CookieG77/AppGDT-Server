@@ -17,6 +17,7 @@ type Config struct {
 	DatabaseCfg *DatabaseConfig
 	HashingCfg  *HashingConfig
 	TokenCfg    *TokenConfig
+	LoginCfg    *LoginLimitConfig
 }
 
 type DatabaseConfig struct {
@@ -34,6 +35,12 @@ type HashingConfig struct {
 type TokenConfig struct {
 	Secret string
 	TTL    time.Duration
+}
+
+type LoginLimitConfig struct {
+	MaxPerEmail int
+	MaxPerIP    int
+	Window      time.Duration
 }
 
 func LoadConfig() (*Config, error) {
@@ -86,12 +93,34 @@ func LoadConfig() (*Config, error) {
 		TTL:    ttl,
 	}
 
+	maxPerEmail := getEnvOrDefaultInt("LOGIN_MAX_FAILURES_PER_EMAIL", 5)
+	if !inRange(3, 20, maxPerEmail) { // Too low locks out users after a few typos, too high allows guessing
+		return nil, fmt.Errorf("LOGIN_MAX_FAILURES_PER_EMAIL must be between %d and %d", 3, 20)
+	}
+
+	maxPerIP := getEnvOrDefaultInt("LOGIN_MAX_FAILURES_PER_IP", 50)
+	if !inRange(10, 1000, maxPerIP) { // Several users may share the same IP (company, school network)
+		return nil, fmt.Errorf("LOGIN_MAX_FAILURES_PER_IP must be between %d and %d", 10, 1000)
+	}
+
+	loginWindow := getEnvOrDefaultDuration("LOGIN_FAILURE_WINDOW", 15*time.Minute)
+	if loginWindow < time.Minute || loginWindow > time.Hour*24 {
+		return nil, fmt.Errorf("LOGIN_FAILURE_WINDOW must be between 1 minute and 24 hours")
+	}
+
+	loginCfg := &LoginLimitConfig{
+		MaxPerEmail: maxPerEmail,
+		MaxPerIP:    maxPerIP,
+		Window:      loginWindow,
+	}
+
 	cfg := &Config{
 		Port:        getEnvOrDefaultPort("PORT", 8080),
 		Address:     getEnvOrDefault("ADDRESS", "localhost"),
 		DatabaseCfg: dbCfg,
 		HashingCfg:  hashingCfg,
 		TokenCfg:    tokenCfg,
+		LoginCfg:    loginCfg,
 	}
 
 	return cfg, nil
