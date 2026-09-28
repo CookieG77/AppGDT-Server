@@ -59,6 +59,30 @@ func (repo *UserRepository) GetByEmail(ctx context.Context, email string) (domai
 	return user, nil
 }
 
+// Exists reports whether a user with the given ID exists.
+func (repo *UserRepository) Exists(ctx context.Context, userID int64) (bool, error) {
+	var exists bool
+	err := repo.pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM users WHERE id = $1)`, userID).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("checking user existence: %w", err)
+	}
+	return exists, nil
+}
+
+// Delete removes the user with the given ID. Their spaces and notes are
+// removed along with them by the database (ON DELETE CASCADE).
+// It returns domain.ErrNotFound if no user matches.
+func (repo *UserRepository) Delete(ctx context.Context, userID int64) error {
+	tag, err := repo.pool.Exec(ctx, `DELETE FROM users WHERE id = $1`, userID)
+	if err != nil {
+		return fmt.Errorf("deleting user: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}
+
 // GetByID returns the user with the given ID.
 // It returns domain.ErrNotFound if no user matches.
 func (repo *UserRepository) GetByID(ctx context.Context, userID int64) (domain.User, error) {

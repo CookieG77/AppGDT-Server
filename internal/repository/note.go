@@ -70,6 +70,35 @@ func (repo *NoteRepository) ListBySpace(ctx context.Context, userID, spaceID int
 	return notes, nil
 }
 
+// ListByUser returns all the notes owned by the given user, in all their spaces.
+func (repo *NoteRepository) ListByUser(ctx context.Context, userID int64) ([]domain.Note, error) {
+	rows, err := repo.pool.Query(ctx, `
+		SELECT n.id, n.space_id, n.title, n.content, n.status, n.created_at, n.updated_at
+		FROM notes n
+		JOIN spaces s ON s.id = n.space_id
+		WHERE s.user_id = $1
+		ORDER BY n.created_at DESC`,
+		userID,
+	)
+	if err != nil {
+		return []domain.Note{}, fmt.Errorf("listing user notes: %w", err)
+	}
+	defer rows.Close()
+
+	var notes = make([]domain.Note, 0)
+	for rows.Next() {
+		var note domain.Note
+		if err := rows.Scan(&note.ID, &note.SpaceID, &note.Title, &note.Content, &note.Status, &note.CreatedAt, &note.UpdatedAt); err != nil {
+			return []domain.Note{}, fmt.Errorf("scanning user notes: %w", err)
+		}
+		notes = append(notes, note)
+	}
+	if err := rows.Err(); err != nil {
+		return []domain.Note{}, fmt.Errorf("iterating user notes: %w", err)
+	}
+	return notes, nil
+}
+
 // GetByID returns a note owned by the given user with the given ID.
 // It returns domain.ErrNotFound if no note matches.
 func (repo *NoteRepository) GetByID(ctx context.Context, userID, noteID int64) (domain.Note, error) {
