@@ -4,7 +4,7 @@ Serveur backend de l'application **GDT**, une application web de gestion de note
 
 Il expose une API REST développée en Go, responsable de la logique métier, de l'accès aux données, de l'authentification, de la validation des données et du contrôle d'accès.
 
-> 🚧 Projet en cours de développement : l'API est complète (authentification, espaces, notes, droits RGPD) et couverte par une collection de tests Postman. Restent à ajouter : les comptes de démonstration et les tests unitaires Go.
+> 🚧 Projet en cours de développement : l'API est complète (authentification, espaces, notes, droits RGPD) et couverte par une collection de tests Postman. Des comptes de démonstration peuvent être créés en une commande. Restent à ajouter : les tests unitaires Go.
 
 ## Stack technique
 
@@ -125,6 +125,35 @@ curl http://localhost:8080/health
 La route renvoie `200` et `{"status":"ok"}` si le serveur et la base de données répondent, et `503` si la base est injoignable (vérification limitée à 2 secondes). Elle peut servir de sonde à un outil de supervision.
 
 Le serveur s'arrête proprement avec `Ctrl+C` : les requêtes en cours ont jusqu'à 10 secondes pour se terminer.
+
+### 3. Créer les comptes de démonstration (optionnel)
+
+```bash
+go run ./cmd/seed
+```
+
+La commande utilise le même fichier `.env` que le serveur, applique les migrations si besoin, puis crée deux comptes remplis d'espaces et de notes d'exemple (les trois états, du contenu Markdown, un espace vide) :
+
+| Email                 | Mot de passe | Contenu                                  |
+|-----------------------|--------------|------------------------------------------|
+| `demo@example.com`    | `Demo1234!`  | 4 espaces, 7 notes                       |
+| `camille@example.com` | `Demo1234!`  | 1 espace, 1 note (pour tester l'isolation entre utilisateurs) |
+
+Les comptes passent par les mêmes services que l'API (validation, hachage bcrypt, journal des événements de sécurité). Un compte qui existe déjà n'est pas modifié.
+
+| Option | Effet |
+|---|---|
+| `-reset` | Supprime les comptes existants (avec toutes leurs données) puis les recrée |
+| `-empty` | Crée les comptes sans espaces ni notes |
+| `-email`, `-username`, `-password` | Crée un compte personnalisé (avec les données d'exemple, sauf `-empty`) à la place des comptes de démonstration |
+| `-v` | Affiche aussi les logs de sécurité des services (sur la sortie d'erreur) |
+
+```bash
+go run ./cmd/seed -reset
+go run ./cmd/seed -email alice@example.com -username Alice -password 'un-mot-de-passe'
+```
+
+> ⚠️ Les comptes de démonstration ont un mot de passe public : ils sont réservés aux environnements locaux ou de démonstration, jamais à la production.
 
 ## Journalisation
 
@@ -302,7 +331,9 @@ Chaque exécution compte 7 connexions échouées pour l'IP du poste de test. Ave
 ```
 .
 ├── api/                  # Contrat OpenAPI et collection Postman
-├── cmd/server/           # Point d'entrée : assemblage des dépendances et cycle de vie du serveur
+├── cmd/
+│   ├── server/           # Point d'entrée de l'API : assemblage des dépendances et cycle de vie du serveur
+│   └── seed/             # Outil en ligne de commande : création des comptes de démonstration
 ├── docs/                 # Journal des choix techniques, schéma de la base
 ├── internal/
 │   ├── auth/             # Hachage des mots de passe (bcrypt) et gestion des JWT
