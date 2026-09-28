@@ -81,7 +81,7 @@ Ces variables sont partagées entre Docker Compose, qui crée la base, et le ser
 | `LOGIN_MAX_FAILURES_PER_IP`    | Non         | `50`   | Échecs de connexion autorisés par IP avant blocage, entre `10` et `1000`      |
 | `LOGIN_FAILURE_WINDOW`         | Non         | `15m`  | Fenêtre de comptage des échecs et durée du blocage, entre `1m` et `24h`       |
 
-Voir [Limitation des tentatives de connexion](#limitation-des-tentatives-de-connexion) pour le fonctionnement.
+Voir [Limitation des tentatives de connexion](#limitation-des-tentatives-de-connexion-1) (section API) pour le fonctionnement.
 
 Le serveur refuse de démarrer si une variable obligatoire est absente ou si une valeur sort des plages autorisées.
 
@@ -374,6 +374,7 @@ Chaque exécution compte 7 connexions échouées pour l'IP du poste de test. Ave
 │   └── service/          # Logique métier et validation
 ├── migrations/           # Migrations SQL, embarquées dans le binaire
 ├── docker-compose.yml
+├── LICENSE
 ├── Makefile              # Commandes courantes (make help)
 └── .env.example
 ```
@@ -386,8 +387,6 @@ Chaque requête traverse les couches dans cet ordre : `middleware` → `handler`
 - [Schéma relationnel de la base de données](docs/database-schema.drawio.svg)
 - [Contrat de l'API (OpenAPI)](api/openapi.yaml)
 
-<!--
-TODO : sections à ajouter / compléter
-- Comptes de démonstration
-- Lien vers le dépôt client
--->
+## Licence
+
+Tous droits réservés. Le code est public pour consultation uniquement : toute réutilisation, copie, modification ou diffusion, totale ou partielle, nécessite l'autorisation écrite préalable de l'auteur. Voir [LICENSE](LICENSE).
