@@ -1,0 +1,3 @@
+$kind: collection
+description: "Limitation des tentatives de connexion : après trop d'échecs pour un même email, la connexion est refusée (429), même avec le bon mot de passe, sans bloquer les autres comptes. À relancer au plus quelques fois par quart d'heure : chaque exécution de la collection compte aussi des échecs pour l'IP du poste de test."
+order: 15000

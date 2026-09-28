@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{email}}",
+      "password": "{{password}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 200 : le blocage ne concerne que l'email visé", () => pm.response.to.have.status(200));
+      pm.test("Token délivré", () => pm.expect(pm.response.json().token).to.be.a("string").and.not.empty);
+    language: text/javascript
+order: 5000

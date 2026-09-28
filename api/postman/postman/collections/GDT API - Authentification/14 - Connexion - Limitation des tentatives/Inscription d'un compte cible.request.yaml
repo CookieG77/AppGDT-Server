@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{bruteEmail}}",
+      "username": "Compte cible",
+      "password": "{{password}}"
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      // Compte dédié, pour ne bloquer aucun compte utilisé par les autres dossiers
+      pm.collectionVariables.set("bruteEmail", `cible_${Date.now()}@example.com`);
+    language: text/javascript
+  - type: afterResponse
+    code: pm.test("Statut 201", () => pm.response.to.have.status(201));
+    language: text/javascript
+order: 1000

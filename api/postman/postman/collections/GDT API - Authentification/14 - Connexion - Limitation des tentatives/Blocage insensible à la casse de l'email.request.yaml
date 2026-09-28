@@ -1,0 +1,32 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{bruteEmailUpper}}",
+      "password": "{{password}}"
+    }
+scripts:
+  - type: beforeRequest
+    code: pm.collectionVariables.set("bruteEmailUpper", pm.collectionVariables.get("bruteEmail").toUpperCase());
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 429", () => pm.response.to.have.status(429));
+      pm.test("Code TOO_MANY_ATTEMPTS", () => pm.expect(pm.response.json().code).to.eql("TOO_MANY_ATTEMPTS"));
+      pm.test("En-tête Retry-After en secondes", () => {
+          const retryAfter = Number(pm.response.headers.get("Retry-After"));
+          pm.expect(retryAfter).to.be.a("number").and.above(0).and.at.most(86400);
+      });
+      pm.test("Aucun token délivré", () => pm.expect(pm.response.json()).to.not.have.property("token"));
+      pm.test("Réponse au format d'erreur du contrat", () => {
+          const body = pm.response.json();
+          pm.expect(body).to.have.property("code").that.is.a("string");
+          pm.expect(body).to.have.property("message").that.is.a("string");
+      });
+    language: text/javascript
+order: 4000

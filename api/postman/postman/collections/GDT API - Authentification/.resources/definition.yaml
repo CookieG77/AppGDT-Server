@@ -1,6 +1,6 @@
 $kind: collection
 description: |-
-  Tests de l'API de GDT : authentification (dossiers 0 à 3) et espaces (dossiers 4 à 8) et notes (dossiers 9 à 13).
+  Tests de l'API de GDT : authentification (dossiers 0 à 3), espaces (dossiers 4 à 8), notes (dossiers 9 à 13) et limitation des tentatives de connexion (dossier 14).
 
   À exécuter dans l'ordre avec le Collection Runner : chaque requête peut dépendre des variables créées par les précédentes (email, token, identifiants d'espaces).
 
@@ -134,4 +134,13 @@ variables:
     disabled: false
   - key: tooLongContent
     value: ""
+    disabled: false
+  - key: bruteEmail
+    value: ""
+    disabled: false
+  - key: bruteEmailUpper
+    value: ""
+    disabled: false
+  - key: loginMaxFailuresPerEmail
+    value: "5"
     disabled: false

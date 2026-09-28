@@ -1,0 +1,41 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{bruteEmail}}",
+      "password": "mauvais-mot-de-passe-final"
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      // Envoie (limite - 1) échecs : la requête principale est le dernier échec autorisé
+      const max = Number(pm.collectionVariables.get("loginMaxFailuresPerEmail"));
+      const baseUrl = pm.collectionVariables.get("baseUrl");
+      for (let i = 1; i < max; i++) {
+          pm.sendRequest({
+              url: `${baseUrl}/auth/login`,
+              method: "POST",
+              header: { "Content-Type": "application/json" },
+              body: {
+                  mode: "raw",
+                  raw: JSON.stringify({ email: pm.collectionVariables.get("bruteEmail"), password: `mauvais-${i}` }),
+              },
+          }, (error, res) => {
+              pm.test(`Échec ${i} : 401`, () => {
+                  pm.expect(error).to.be.null;
+                  pm.expect(res.code).to.eql(401);
+              });
+          });
+      }
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test("Le dernier échec autorisé reste un 401", () => pm.response.to.have.status(401));
+      pm.test("Code INVALID_CREDENTIALS", () => pm.expect(pm.response.json().code).to.eql("INVALID_CREDENTIALS"));
+    language: text/javascript
+order: 2000
