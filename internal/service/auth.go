@@ -15,6 +15,7 @@ import (
 
 	"github.com/CookieG77/AppGDT-Server/internal/auth"
 	"github.com/CookieG77/AppGDT-Server/internal/domain"
+	"github.com/CookieG77/AppGDT-Server/internal/logging"
 	"github.com/CookieG77/AppGDT-Server/internal/repository"
 )
 
@@ -76,11 +77,14 @@ func (s *AuthService) Register(ctx context.Context, email, username, password st
 
 	// domain.ErrEmailUsed is wrapped, so errors.Is still recognizes it.
 	user, err := s.users.Create(ctx, email, username, hash)
+	if errors.Is(err, domain.ErrEmailUsed) {
+		logging.Security(ctx, slog.LevelInfo, "registration_rejected", "reason", "email already used")
+	}
 	if err != nil {
 		return domain.User{}, fmt.Errorf("registering user: %w", err)
 	}
 
-	slog.Info("user registered", "userID", user.ID)
+	logging.Security(ctx, slog.LevelInfo, "user_registered", "targetUserID", user.ID)
 	return user, nil
 }
 
@@ -104,14 +108,14 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 	// No account can have a password longer than bcrypt's limit.
 	if len(password) > passwordMaxBytes {
 		s.simulatePasswordCheck(password)
-		slog.Info("failed login attempt", "reason", "password too long")
+		logging.Security(ctx, slog.LevelWarn, "login_failed", "reason", "password too long")
 		return "", domain.ErrInvalidCredentials
 	}
 
 	user, err := s.users.GetByEmail(ctx, email)
 	if errors.Is(err, domain.ErrNotFound) {
 		s.simulatePasswordCheck(password)
-		slog.Info("failed login attempt", "reason", "unknown email")
+		logging.Security(ctx, slog.LevelWarn, "login_failed", "reason", "unknown email")
 		return "", domain.ErrInvalidCredentials
 	}
 	if err != nil {
@@ -120,7 +124,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 
 	err = s.hasher.CheckPassword(user.PasswordHash, password)
 	if errors.Is(err, auth.ErrPasswordMismatch) {
-		slog.Info("failed login attempt", "reason", "wrong password", "userID", user.ID)
+		logging.Security(ctx, slog.LevelWarn, "login_failed", "reason", "wrong password", "targetUserID", user.ID)
 		return "", domain.ErrInvalidCredentials
 	}
 	if err != nil {
@@ -132,7 +136,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 		return "", fmt.Errorf("logging in: %w", err)
 	}
 
-	slog.Info("user logged in", "userID", user.ID)
+	logging.Security(ctx, slog.LevelInfo, "login_succeeded", "targetUserID", user.ID)
 	return token, nil
 }
 

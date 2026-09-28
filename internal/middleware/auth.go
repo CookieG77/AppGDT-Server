@@ -10,6 +10,7 @@ import (
 
 	"github.com/CookieG77/AppGDT-Server/internal/auth"
 	"github.com/CookieG77/AppGDT-Server/internal/httpjson"
+	"github.com/CookieG77/AppGDT-Server/internal/logging"
 )
 
 // contextKey is unexported so that no other package can read or overwrite
@@ -32,12 +33,14 @@ func Authenticate(tokens *auth.TokenManager) func(http.Handler) http.Handler {
 
 			userID, err := tokens.Parse(tokenString)
 			if err != nil {
-				slog.Info("rejected token", "error", err, "method", r.Method, "path", r.URL.Path)
+				logging.Security(r.Context(), slog.LevelWarn, "token_rejected",
+					"reason", err.Error(), "method", r.Method, "path", r.URL.Path)
 				unauthorized(w)
 				return
 			}
 
 			ctx := context.WithValue(r.Context(), userIDKey, userID)
+			logging.SetUserID(ctx, userID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
