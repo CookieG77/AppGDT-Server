@@ -81,3 +81,5 @@ ainsi que des justifications associées.
 
 - J'ai décidé de temporairement ne pas créer de fichiers de tests go pour me concentrer sur la création du client. Mais si j'ai le temps, j'y reviendrai.
   Autrement, je pourrais aussi utiliser une IA pour générer les fichiers en batch.
+
+- J'ai ajouté un script pour remplir la base de donnée avec des données d'exemple à l'aide d'un second script.
