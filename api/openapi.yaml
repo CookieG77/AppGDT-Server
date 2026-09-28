@@ -148,7 +148,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               example:
                 code: TOO_MANY_ATTEMPTS
-                message: Trop de tentatives de connexion échouées. Veuillez réessayer plus tard.
+                message: Trop de tentatives échouées. Veuillez réessayer plus tard.
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -167,6 +167,80 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags: [Users]
+      summary: Supprimer son compte (droit à l'effacement)
+      description: |
+        Supprime définitivement le compte de l'utilisateur connecté, ainsi que tous ses
+        espaces et toutes ses notes. Le mot de passe est exigé, pour qu'un token volé ne
+        suffise pas à effacer un compte. Les essais de mot de passe comptent dans la même
+        limite que les connexions échouées. Après la suppression, le token n'est plus accepté.
+      operationId: deleteCurrentUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteAccountInput"
+      responses:
+        "204":
+          description: Compte et données supprimés
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Mot de passe incorrect (la session reste valide)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                code: INVALID_PASSWORD
+                message: Mot de passe incorrect.
+        "429":
+          description: Trop d'essais de mot de passe échoués récemment pour ce compte
+          headers:
+            Retry-After:
+              description: Nombre de secondes à attendre avant de réessayer
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                code: TOO_MANY_ATTEMPTS
+                message: Trop de tentatives échouées. Veuillez réessayer plus tard.
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /users/me/export:
+    get:
+      tags: [Users]
+      summary: Exporter ses données (droit à la portabilité)
+      description: |
+        Renvoie toutes les données de l'utilisateur connecté : son profil, ses espaces et
+        les notes de chaque espace. La réponse est proposée en téléchargement
+        (en-tête `Content-Disposition: attachment`). Le mot de passe n'est jamais exporté.
+      operationId: exportCurrentUser
+      responses:
+        "200":
+          description: Données du compte
+          headers:
+            Content-Disposition:
+              description: Nom du fichier proposé, par exemple `attachment; filename="gdt-export-2026-09-28.json"`
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountExport"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "500":
@@ -474,6 +548,39 @@ components:
           type: string
           format: password
           example: MotDePasseSolide123
+
+    DeleteAccountInput:
+      type: object
+      required: [password]
+      additionalProperties: false
+      properties:
+        password:
+          type: string
+          format: password
+          description: Mot de passe actuel, pour confirmer la suppression
+          example: MotDePasseSolide123
+
+    AccountExport:
+      type: object
+      required: [exportedAt, user, spaces]
+      properties:
+        exportedAt:
+          type: string
+          format: date-time
+        user:
+          $ref: "#/components/schemas/User"
+        spaces:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/Space"
+              - type: object
+                required: [notes]
+                properties:
+                  notes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Note"
 
     AuthToken:
       type: object

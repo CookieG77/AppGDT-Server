@@ -142,7 +142,11 @@ Les logs sont écrits au format JSON sur la sortie standard, une ligne par évé
 | `login_failed`          | `WARN` | Connexion refusée, avec la raison (email inconnu, mauvais mot de passe)  |
 | `login_locked`          | `WARN` | Un email ou une IP atteint la limite d'échecs de connexion (`scope`)     |
 | `login_blocked`         | `WARN` | Connexion refusée car l'email ou l'IP est bloqué (`scope`)               |
-| `token_rejected`        | `WARN` | Token invalide, falsifié ou expiré                                       |
+| `token_rejected`        | `WARN` | Token invalide, falsifié, expiré, ou dont le compte a été supprimé       |
+| `account_exported`      | `INFO` | Export des données du compte                                             |
+| `account_deleted`       | `INFO` | Suppression du compte                                                    |
+| `account_deletion_failed` | `WARN` | Suppression refusée pour mauvais mot de passe                          |
+| `account_deletion_blocked` | `WARN` | Suppression refusée car trop d'essais de mot de passe ont échoué      |
 | `resource_not_found`    | `INFO` | Ressource inexistante ou appartenant à un autre utilisateur              |
 
 Chaque requête reçoit un identifiant, renvoyé dans l'en-tête de réponse `X-Request-ID` et ajouté à tous les logs écrits pendant son traitement, avec l'identifiant de l'utilisateur connecté (`userID`). Un client peut transmettre son propre identifiant dans ce même en-tête pour suivre une requête de bout en bout ; il est réutilisé s'il est valide (64 caractères max, lettres, chiffres, `.`, `_` et `-`).
@@ -183,6 +187,8 @@ Les routes protégées attendent un en-tête `Authorization: Bearer <token>`, le
 | `POST`   | `/auth/register`          | Non              | Crée un compte                                | `201`  |
 | `POST`   | `/auth/login`             | Non              | Renvoie un token JWT                          | `200`  |
 | `GET`    | `/users/me`               | Oui              | Profil de l'utilisateur connecté              | `200`  |
+| `DELETE` | `/users/me`               | Oui              | Supprime le compte et toutes ses données      | `204`  |
+| `GET`    | `/users/me/export`        | Oui              | Exporte toutes les données du compte          | `200`  |
 | `GET`    | `/spaces`                 | Oui              | Liste les espaces de l'utilisateur            | `200`  |
 | `POST`   | `/spaces`                 | Oui              | Crée un espace                                | `201`  |
 | `GET`    | `/spaces/{spaceId}`       | Oui              | Consulte un espace                            | `200`  |
@@ -226,6 +232,15 @@ Une fois la limite atteinte, la connexion est refusée avec un `429 TOO_MANY_ATT
 
 Les compteurs sont gardés en mémoire : ils sont perdus au redémarrage du serveur et ne seraient pas partagés entre plusieurs instances. C'est suffisant pour un serveur unique ; plusieurs instances nécessiteraient un stockage partagé (base de données, Redis). Le blocage par email permet aussi à un tiers de bloquer temporairement un compte en échouant volontairement : c'est le compromis habituel de ce mécanisme, limité par la durée de la fenêtre.
 
+### Données personnelles (RGPD)
+
+Deux routes permettent à un utilisateur d'exercer ses droits sur ses données :
+
+- **Droit à la portabilité** : `GET /users/me/export` renvoie en JSON le profil, les espaces et les notes de chaque espace, proposés en téléchargement (`gdt-export-AAAA-MM-JJ.json`). Le mot de passe, même haché, n'est jamais exporté.
+- **Droit à l'effacement** : `DELETE /users/me` supprime définitivement le compte, ses espaces et ses notes (suppression en cascade dans la base). Le corps doit contenir le mot de passe actuel (`{"password": "..."}`), pour qu'un token volé ne suffise pas à effacer un compte. Un mauvais mot de passe renvoie `403 INVALID_PASSWORD`, et non `401`, pour que le client ne croie pas la session expirée. Ces essais comptent dans la même limite que les connexions échouées.
+
+Un token reste valide jusqu'à son expiration. Pour qu'il ne donne plus accès à l'API une fois le compte supprimé, le middleware d'authentification vérifie à chaque requête que l'utilisateur existe toujours (une requête SQL sur la clé primaire).
+
 ### Format des erreurs
 
 Toutes les erreurs de l'API suivent le même format, y compris pour une route inexistante ou une méthode non autorisée :
@@ -249,11 +264,12 @@ Le champ `details` n'est présent que pour les erreurs de validation, et liste t
 | `400`  | `INVALID_ID`          | Identifiant du chemin qui n'est pas un entier positif                  |
 | `401`  | `UNAUTHORIZED`        | Token absent, invalide ou expiré                                       |
 | `401`  | `INVALID_CREDENTIALS` | Email ou mot de passe incorrect                                        |
+| `403`  | `INVALID_PASSWORD`    | Mot de passe incorrect lors de la suppression du compte                |
 | `404`  | `NOT_FOUND`           | Ressource inexistante ou appartenant à un autre utilisateur            |
 | `404`  | `ROUTE_NOT_FOUND`     | Aucune route ne correspond au chemin demandé                           |
 | `405`  | `METHOD_NOT_ALLOWED`  | Méthode non autorisée pour ce chemin (l'en-tête `Allow` liste les méthodes acceptées) |
 | `409`  | `EMAIL_ALREADY_USED`  | Adresse email déjà utilisée                                            |
-| `429`  | `TOO_MANY_ATTEMPTS`   | Trop de connexions échouées (l'en-tête `Retry-After` indique l'attente) |
+| `429`  | `TOO_MANY_ATTEMPTS`   | Trop d'essais de mot de passe échoués (l'en-tête `Retry-After` indique l'attente) |
 | `500`  | `INTERNAL_ERROR`      | Erreur inattendue, y compris un panic dans un handler (le détail est journalisé, jamais renvoyé au client) |
 | `503`  | `SERVICE_UNAVAILABLE` | Base de données injoignable (renvoyé par `/health`)                    |
 
@@ -267,6 +283,7 @@ L'API est couverte par une collection Postman de plus de 500 assertions, rangée
 | 4 à 8    | Espaces        | Création, consultation, modification, isolation entre utilisateurs, suppression                     |
 | 9 à 13   | Notes          | Création, consultation, modification, isolation entre utilisateurs, suppression en cascade         |
 | 14       | Connexion      | Blocage après trop d'échecs pour un email, même avec le bon mot de passe, sans bloquer les autres comptes |
+| 15       | Compte (RGPD)  | Export des données, suppression du compte (mot de passe exigé), token refusé et connexion impossible après suppression |
 
 Chaque domaine vérifie les cas nominaux, les limites exactes de validation, les corps et identifiants invalides, l'absence de token, et le fait qu'un second utilisateur ne peut ni voir, ni modifier, ni supprimer les ressources du premier.
 
