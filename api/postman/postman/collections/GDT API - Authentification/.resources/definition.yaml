@@ -156,3 +156,6 @@ variables:
   - key: rgpdNoteId
     value: ""
     disabled: false
+  - key: bruteFailuresSent
+    value: ""
+    disabled: false
