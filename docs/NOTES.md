@@ -63,4 +63,10 @@ ainsi que des justifications associées.
   On attribuerait à la connection un token d'accès qui a une TTL courte (~5min) non révocable, mais qui permet d'obtenir un token de rafraichissement juste derrière. Ce token de raffraichissement aurais une durée de vie bien plus longue, mais qui serait stocké dans la BDD et donc révocable avec une simple requête.
   Pour la taille de cette application, c'est une structure un peu large, mais elle serait solide.
 
-- Maintenant que j'ai au moins une API en place (auth), j'ai mis en place une collection postman  
+- Maintenant que j'ai au moins une API en place (auth), j'ai mis en place une collection postman 
+
+- J'ai complété les api restantes et aussi créer leurs tests postman à l'aide de Claude pour créer rapidement les tests
+
+### 28/09 :
+
+- J'ai mis à jour la doc du readme

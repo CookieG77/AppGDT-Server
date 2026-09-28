@@ -4,7 +4,7 @@ Serveur backend de l'application **GDT**, une application web de gestion de note
 
 Il expose une API REST développée en Go, responsable de la logique métier, de l'accès aux données, de l'authentification, de la validation des données et du contrôle d'accès.
 
-> 🚧 Projet en cours de développement : l'authentification est disponible, la gestion des espaces et des notes est en cours.
+> 🚧 Projet en cours de développement : l'API (authentification, espaces et notes) est fonctionnelle et couverte par une collection de tests Postman. Les comptes de démonstration et plusieurs améliorations (journalisation, robustesse) restent à ajouter.
 
 ## Stack technique
 
@@ -138,22 +138,94 @@ docker compose exec postgres psql -U gdt -d gdt -c "SELECT * FROM schema_migrati
 
 Le contrat complet de l'API est décrit au format OpenAPI 3.1 dans [`api/openapi.yaml`](api/openapi.yaml). Pour le consulter sous forme de documentation interactive, coller son contenu dans [Swagger Editor](https://editor.swagger.io/).
 
-Les routes protégées attendent un en-tête `Authorization: Bearer <token>`, le token étant obtenu via `POST /auth/login`.
+Les routes protégées attendent un en-tête `Authorization: Bearer <token>`, le token étant obtenu via `POST /auth/login`. Les corps de requête et de réponse sont au format JSON.
 
-| Méthode | Route            | Authentification | Description                          | État          |
-|---------|------------------|------------------|--------------------------------------|---------------|
-| `GET`   | `/health`        | Non              | Vérifie que l'API répond             | Disponible    |
-| `POST`  | `/auth/register` | Non              | Crée un compte                       | Disponible    |
-| `POST`  | `/auth/login`    | Non              | Renvoie un token JWT                 | Disponible    |
-| `GET`   | `/users/me`      | Oui              | Profil de l'utilisateur connecté     | Disponible    |
-| —       | `/spaces/...`    | Oui              | Gestion des espaces                  | En cours      |
-| —       | `/notes/...`     | Oui              | Gestion des notes                    | En cours      |
+### Routes
+
+| Méthode  | Route                     | Authentification | Description                                   | Succès |
+|----------|---------------------------|------------------|-----------------------------------------------|--------|
+| `GET`    | `/health`                 | Non              | Vérifie que l'API répond                      | `200`  |
+| `POST`   | `/auth/register`          | Non              | Crée un compte                                | `201`  |
+| `POST`   | `/auth/login`             | Non              | Renvoie un token JWT                          | `200`  |
+| `GET`    | `/users/me`               | Oui              | Profil de l'utilisateur connecté              | `200`  |
+| `GET`    | `/spaces`                 | Oui              | Liste les espaces de l'utilisateur            | `200`  |
+| `POST`   | `/spaces`                 | Oui              | Crée un espace                                | `201`  |
+| `GET`    | `/spaces/{spaceId}`       | Oui              | Consulte un espace                            | `200`  |
+| `PUT`    | `/spaces/{spaceId}`       | Oui              | Modifie le nom et la description d'un espace  | `200`  |
+| `DELETE` | `/spaces/{spaceId}`       | Oui              | Supprime un espace et toutes ses notes        | `204`  |
+| `GET`    | `/spaces/{spaceId}/notes` | Oui              | Liste les notes d'un espace                   | `200`  |
+| `POST`   | `/spaces/{spaceId}/notes` | Oui              | Crée une note dans un espace                  | `201`  |
+| `GET`    | `/notes/{noteId}`         | Oui              | Consulte une note                             | `200`  |
+| `PUT`    | `/notes/{noteId}`         | Oui              | Modifie le titre, le contenu et l'état        | `200`  |
+| `DELETE` | `/notes/{noteId}`         | Oui              | Supprime une note                             | `204`  |
+
+Les listes sont triées de la plus récente à la plus ancienne. Les routes `PUT` remplacent l'intégralité de la ressource : un champ facultatif omis reprend sa valeur par défaut.
+
+### Règles de validation
+
+| Ressource   | Champ         | Règle                                                                    |
+|-------------|---------------|--------------------------------------------------------------------------|
+| Utilisateur | `email`       | Obligatoire, format valide, 254 caractères max, insensible à la casse    |
+| Utilisateur | `username`    | Obligatoire, 50 caractères max                                           |
+| Utilisateur | `password`    | 8 caractères min, 72 octets max (limite de bcrypt)                       |
+| Espace      | `name`        | Obligatoire, 100 caractères max                                          |
+| Espace      | `description` | Facultative (vide par défaut), 1000 caractères max                       |
+| Note        | `title`       | Obligatoire, 200 caractères max                                          |
+| Note        | `content`     | Facultatif (vide par défaut), 50000 caractères max, conservé tel quel    |
+| Note        | `status`      | `todo` (défaut), `in_progress` ou `done`                                 |
+
+Les espaces superflus en début et en fin de champ sont retirés, sauf pour le contenu des notes. Les longueurs sont comptées en caractères et non en octets. Tout champ non prévu par le contrat est refusé.
+
+### Contrôle d'accès
+
+Un utilisateur n'accède qu'à ses propres espaces et notes. Une ressource appartenant à un autre utilisateur est traitée comme inexistante : la réponse est un `404` identique à celui d'une ressource qui n'existe pas, afin de ne pas révéler son existence. Une note est toujours rattachée à l'espace indiqué dans le chemin lors de sa création, et ne peut pas être déplacée vers un autre espace.
+
+### Format des erreurs
+
+Les erreurs renvoyées par les routes de l'API suivent toutes le même format :
+
+```json
+{
+  "code": "VALIDATION_ERROR",
+  "message": "Les données envoyées sont invalides.",
+  "details": [
+    { "field": "name", "message": "Le nom est obligatoire." }
+  ]
+}
+```
+
+Le champ `details` n'est présent que pour les erreurs de validation, et liste tous les champs invalides en une seule réponse.
+
+| Statut | Code                  | Cas                                                                     |
+|--------|-----------------------|-------------------------------------------------------------------------|
+| `400`  | `VALIDATION_ERROR`    | Un ou plusieurs champs ne respectent pas les règles de validation      |
+| `400`  | `INVALID_JSON`        | Corps vide, mal formé, mauvais type de champ ou champ non autorisé     |
+| `400`  | `INVALID_ID`          | Identifiant du chemin qui n'est pas un entier positif                  |
+| `401`  | `UNAUTHORIZED`        | Token absent, invalide ou expiré                                       |
+| `401`  | `INVALID_CREDENTIALS` | Email ou mot de passe incorrect                                        |
+| `404`  | `NOT_FOUND`           | Ressource inexistante ou appartenant à un autre utilisateur            |
+| `409`  | `EMAIL_ALREADY_USED`  | Adresse email déjà utilisée                                            |
+| `500`  | `INTERNAL_ERROR`      | Erreur inattendue (le détail est journalisé, jamais renvoyé au client) |
 
 ## Tests
 
-Une collection Postman couvre l'API d'authentification, y compris les cas d'erreur et plusieurs tentatives d'attaque (token falsifié, algorithme `none`, énumération des comptes, champs non autorisés) : [`api/postman/gdt-api-auth.postman_collection.json`](api/postman/gdt-api-auth.postman_collection.json).
+L'API est couverte par une collection Postman de plus de 450 assertions, rangée dans [`api/postman/`](api/postman/). Elle est organisée en dossiers numérotés :
 
-Pour l'exécuter : l'importer dans Postman, puis lancer la collection complète avec le *Collection Runner*, **dans l'ordre**, serveur et base démarrés. L'adresse de l'API se règle dans la variable de collection `baseUrl`.
+| Dossiers | Domaine        | Contenu                                                                                               |
+|----------|----------------|-------------------------------------------------------------------------------------------------------|
+| 0 à 3    | Authentification | Inscription, connexion, profil, tentatives d'attaque (token falsifié, algorithme `none`, énumération des comptes) |
+| 4 à 8    | Espaces        | Création, consultation, modification, isolation entre utilisateurs, suppression                     |
+| 9 à 13   | Notes          | Création, consultation, modification, isolation entre utilisateurs, suppression en cascade         |
+
+Chaque domaine vérifie les cas nominaux, les limites exactes de validation, les corps et identifiants invalides, l'absence de token, et le fait qu'un second utilisateur ne peut ni voir, ni modifier, ni supprimer les ressources du premier.
+
+Pour l'exécuter :
+
+1. Démarrer la base de données et le serveur (voir [Lancement](#lancement)).
+2. Dans Postman, ouvrir le dossier `api/postman/` : la collection *GDT API - Authentification* apparaît dans la vue locale (*Local View*).
+3. Lancer la collection **complète** avec le *Collection Runner*, **dans l'ordre** : les dossiers réutilisent les variables créées par les précédents (tokens, identifiants).
+
+L'adresse de l'API se règle dans la variable de collection `baseUrl` (`http://localhost:8080` par défaut). Chaque exécution crée des comptes avec des adresses uniques et supprime les espaces qu'elle a créés : la collection peut être relancée sans réinitialiser la base.
 
 ## Structure du projet
 
@@ -190,5 +262,4 @@ Chaque requête traverse les couches dans cet ordre : `middleware` → `handler`
 TODO : sections à ajouter / compléter
 - Comptes de démonstration
 - Lien vers le dépôt client
-- Mise à jour du tableau des routes (espaces et notes)
 -->
