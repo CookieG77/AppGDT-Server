@@ -1,0 +1,25 @@
+$kind: http-request
+url: "{{baseUrl}}/users/me"
+method: DELETE
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{rgpdToken}}
+body:
+  type: json
+  content: |-
+    {
+      "password": ""
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 400", () => pm.response.to.have.status(400));
+      pm.test("Code VALIDATION_ERROR", () => pm.expect(pm.response.json().code).to.eql("VALIDATION_ERROR"));
+      pm.test("Champ password signalé", () => pm.expect(pm.response.json().details.map(d => d.field)).to.have.members(["password"]));
+      pm.test("Réponse au format d'erreur du contrat", () => {
+          const body = pm.response.json();
+          pm.expect(body).to.have.property("code").that.is.a("string");
+          pm.expect(body).to.have.property("message").that.is.a("string");
+      });
+    language: text/javascript
+order: 9000

@@ -1,0 +1,24 @@
+$kind: http-request
+url: "{{baseUrl}}/users/me"
+method: DELETE
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{rgpdToken}}
+body:
+  type: json
+  content: |-
+    {
+      "password": "mauvais-mot-de-passe"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 403 (et non 401 : la session reste valide)", () => pm.response.to.have.status(403));
+      pm.test("Code INVALID_PASSWORD", () => pm.expect(pm.response.json().code).to.eql("INVALID_PASSWORD"));
+      pm.test("Réponse au format d'erreur du contrat", () => {
+          const body = pm.response.json();
+          pm.expect(body).to.have.property("code").that.is.a("string");
+          pm.expect(body).to.have.property("message").that.is.a("string");
+      });
+    language: text/javascript
+order: 10000

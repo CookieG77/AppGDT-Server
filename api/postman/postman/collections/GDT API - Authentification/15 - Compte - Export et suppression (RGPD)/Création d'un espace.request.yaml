@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/spaces"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{rgpdToken}}
+body:
+  type: json
+  content: |-
+    {
+      "name": "Mes données",
+      "description": "Espace à exporter"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 201", () => pm.response.to.have.status(201));
+      pm.collectionVariables.set("rgpdSpaceId", pm.response.json().id);
+    language: text/javascript
+order: 3000

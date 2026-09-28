@@ -1,0 +1,3 @@
+$kind: collection
+description: "Droits RGPD : export de toutes les données du compte (portabilité) et suppression du compte avec toutes ses données (effacement). Utilise un compte dédié, supprimé à la fin du dossier."
+order: 16000

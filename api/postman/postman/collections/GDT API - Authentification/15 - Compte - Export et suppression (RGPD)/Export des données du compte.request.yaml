@@ -1,0 +1,35 @@
+$kind: http-request
+url: "{{baseUrl}}/users/me/export"
+method: GET
+headers:
+  Authorization: Bearer {{rgpdToken}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 200", () => pm.response.to.have.status(200));
+      pm.test("Proposé en téléchargement (fichier JSON)", () => {
+          const disposition = pm.response.headers.get("Content-Disposition");
+          pm.expect(disposition).to.match(/^attachment; filename="gdt-export-\d{4}-\d{2}-\d{2}\.json"$/);
+      });
+      const body = pm.response.json();
+      pm.test("Date d'export présente", () =>
+          pm.expect(new Date(body.exportedAt).toString()).to.not.eql("Invalid Date"));
+      pm.test("Profil de l'utilisateur", () => {
+          pm.expect(body.user.id).to.eql(Number(pm.collectionVariables.get("rgpdUserId")));
+          pm.expect(body.user.email).to.eql(pm.collectionVariables.get("rgpdEmail"));
+          pm.expect(body.user.username).to.eql("Compte RGPD");
+      });
+      pm.test("Aucun mot de passe ni hash exporté", () =>
+          ["password", "passwordHash", "password_hash", "PasswordHash"].forEach(k => pm.expect(body.user).to.not.have.property(k)));
+      pm.test("Uniquement les espaces du compte, avec leurs notes", () => {
+          pm.expect(body.spaces).to.be.an("array").with.lengthOf(1);
+          const space = body.spaces[0];
+          pm.expect(space.id).to.eql(Number(pm.collectionVariables.get("rgpdSpaceId")));
+          pm.expect(space.name).to.eql("Mes données");
+          pm.expect(space.notes).to.be.an("array").with.lengthOf(1);
+          pm.expect(space.notes[0].id).to.eql(Number(pm.collectionVariables.get("rgpdNoteId")));
+          pm.expect(space.notes[0].content).to.eql("Contenu personnel");
+          pm.expect(space.notes[0].status).to.eql("in_progress");
+      });
+    language: text/javascript
+order: 6000

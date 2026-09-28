@@ -1,0 +1,24 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{rgpdEmail}}",
+      "username": "Nouveau compte",
+      "password": "{{password}}"
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      // Crée un nouveau compte avec la même adresse, puis vérifie qu'il ne récupère aucune donnée de l'ancien
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 201", () => pm.response.to.have.status(201));
+      pm.test("Nouvel identifiant", () => pm.expect(pm.response.json().id).to.not.eql(Number(pm.collectionVariables.get("rgpdUserId"))));
+    language: text/javascript
+order: 16000

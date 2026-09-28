@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/users/me"
+method: DELETE
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{rgpdToken}}
+body:
+  type: json
+  content: |-
+    {
+      "password": "{{password}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 204", () => pm.response.to.have.status(204));
+      pm.test("Corps de réponse vide", () => pm.expect(pm.response.text()).to.be.empty);
+    language: text/javascript
+order: 12000

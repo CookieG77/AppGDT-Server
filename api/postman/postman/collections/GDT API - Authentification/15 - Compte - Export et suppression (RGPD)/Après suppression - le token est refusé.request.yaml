@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{baseUrl}}/users/me"
+method: GET
+headers:
+  Authorization: Bearer {{rgpdToken}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Statut 401 : le token d'un compte supprimé ne donne plus accès à l'API", () => pm.response.to.have.status(401));
+      pm.test("Code UNAUTHORIZED", () => pm.expect(pm.response.json().code).to.eql("UNAUTHORIZED"));
+    language: text/javascript
+order: 13000
