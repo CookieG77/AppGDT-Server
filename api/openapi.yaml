@@ -97,6 +97,22 @@ paths:
               example:
                 code: INVALID_CREDENTIALS
                 message: Email ou mot de passe incorrect.
+        "429":
+          description: |
+            Trop de connexions échouées récemment pour cet email ou pour l'IP du client.
+            La connexion est refusée, même avec le bon mot de passe, jusqu'à la fin du blocage.
+          headers:
+            Retry-After:
+              description: Nombre de secondes à attendre avant de réessayer
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                code: TOO_MANY_ATTEMPTS
+                message: Trop de tentatives de connexion échouées. Veuillez réessayer plus tard.
         "500":
           $ref: "#/components/responses/InternalError"
 

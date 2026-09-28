@@ -72,6 +72,16 @@ Ces variables sont partagées entre Docker Compose, qui crée la base, et le ser
 | `JWT_TTL`     | Non         | `1h`   | Durée de validité des tokens, entre `5m` et `24h` (ex. `30m`, `2h`)  |
 | `BCRYPT_COST` | Non         | `12`   | Coût du hachage des mots de passe, entre `10` et `14`                |
 
+### Limitation des tentatives de connexion
+
+| Variable                       | Obligatoire | Défaut | Description                                                                   |
+|--------------------------------|-------------|--------|-------------------------------------------------------------------------------|
+| `LOGIN_MAX_FAILURES_PER_EMAIL` | Non         | `5`    | Échecs de connexion autorisés par email avant blocage, entre `3` et `20`      |
+| `LOGIN_MAX_FAILURES_PER_IP`    | Non         | `50`   | Échecs de connexion autorisés par IP avant blocage, entre `10` et `1000`      |
+| `LOGIN_FAILURE_WINDOW`         | Non         | `15m`  | Fenêtre de comptage des échecs et durée du blocage, entre `1m` et `24h`       |
+
+Voir [Limitation des tentatives de connexion](#limitation-des-tentatives-de-connexion) pour le fonctionnement.
+
 Le serveur refuse de démarrer si une variable obligatoire est absente ou si une valeur sort des plages autorisées.
 
 Pour générer une clé `JWT_SECRET` aléatoire :
@@ -128,6 +138,8 @@ Les logs sont écrits au format JSON sur la sortie standard, une ligne par évé
 | `registration_rejected` | `INFO` | Inscription avec une adresse déjà utilisée                               |
 | `login_succeeded`       | `INFO` | Connexion réussie                                                        |
 | `login_failed`          | `WARN` | Connexion refusée, avec la raison (email inconnu, mauvais mot de passe)  |
+| `login_locked`          | `WARN` | Un email ou une IP atteint la limite d'échecs de connexion (`scope`)     |
+| `login_blocked`         | `WARN` | Connexion refusée car l'email ou l'IP est bloqué (`scope`)               |
 | `token_rejected`        | `WARN` | Token invalide, falsifié ou expiré                                       |
 | `resource_not_found`    | `INFO` | Ressource inexistante ou appartenant à un autre utilisateur              |
 
@@ -201,6 +213,17 @@ Les espaces superflus en début et en fin de champ sont retirés, sauf pour le c
 
 Un utilisateur n'accède qu'à ses propres espaces et notes. Une ressource appartenant à un autre utilisateur est traitée comme inexistante : la réponse est un `404` identique à celui d'une ressource qui n'existe pas, afin de ne pas révéler son existence. Une note est toujours rattachée à l'espace indiqué dans le chemin lors de sa création, et ne peut pas être déplacée vers un autre espace.
 
+### Limitation des tentatives de connexion
+
+Pour freiner la recherche de mots de passe par force brute, les connexions échouées sont comptées de deux façons :
+
+- **par email** : protège chaque compte contre une attaque ciblée. Les échecs sont comptés même pour un email sans compte, pour qu'un blocage ne révèle pas si l'adresse est inscrite ;
+- **par IP** : limite un même client qui essaierait des mots de passe sur de nombreux comptes. La limite est plus haute, car plusieurs utilisateurs peuvent partager une IP (réseau d'entreprise ou d'école).
+
+Une fois la limite atteinte, la connexion est refusée avec un `429 TOO_MANY_ATTEMPTS`, **même avec le bon mot de passe**, pendant toute la durée de la fenêtre. L'en-tête `Retry-After` indique le nombre de secondes à attendre. Une connexion réussie remet à zéro le compteur de l'email, mais pas celui de l'IP : sinon, un attaquant pourrait l'effacer en se connectant à son propre compte entre deux essais.
+
+Les compteurs sont gardés en mémoire : ils sont perdus au redémarrage du serveur et ne seraient pas partagés entre plusieurs instances. C'est suffisant pour un serveur unique ; plusieurs instances nécessiteraient un stockage partagé (base de données, Redis). Le blocage par email permet aussi à un tiers de bloquer temporairement un compte en échouant volontairement : c'est le compromis habituel de ce mécanisme, limité par la durée de la fenêtre.
+
 ### Format des erreurs
 
 Toutes les erreurs de l'API suivent le même format, y compris pour une route inexistante ou une méthode non autorisée :
@@ -228,17 +251,19 @@ Le champ `details` n'est présent que pour les erreurs de validation, et liste t
 | `404`  | `ROUTE_NOT_FOUND`     | Aucune route ne correspond au chemin demandé                           |
 | `405`  | `METHOD_NOT_ALLOWED`  | Méthode non autorisée pour ce chemin (l'en-tête `Allow` liste les méthodes acceptées) |
 | `409`  | `EMAIL_ALREADY_USED`  | Adresse email déjà utilisée                                            |
+| `429`  | `TOO_MANY_ATTEMPTS`   | Trop de connexions échouées (l'en-tête `Retry-After` indique l'attente) |
 | `500`  | `INTERNAL_ERROR`      | Erreur inattendue, y compris un panic dans un handler (le détail est journalisé, jamais renvoyé au client) |
 
 ## Tests
 
-L'API est couverte par une collection Postman de plus de 450 assertions, rangée dans [`api/postman/`](api/postman/). Elle est organisée en dossiers numérotés :
+L'API est couverte par une collection Postman de plus de 500 assertions, rangée dans [`api/postman/`](api/postman/). Elle est organisée en dossiers numérotés :
 
 | Dossiers | Domaine        | Contenu                                                                                               |
 |----------|----------------|-------------------------------------------------------------------------------------------------------|
 | 0 à 3    | Authentification | Inscription, connexion, profil, tentatives d'attaque (token falsifié, algorithme `none`, énumération des comptes) |
 | 4 à 8    | Espaces        | Création, consultation, modification, isolation entre utilisateurs, suppression                     |
 | 9 à 13   | Notes          | Création, consultation, modification, isolation entre utilisateurs, suppression en cascade         |
+| 14       | Connexion      | Blocage après trop d'échecs pour un email, même avec le bon mot de passe, sans bloquer les autres comptes |
 
 Chaque domaine vérifie les cas nominaux, les limites exactes de validation, les corps et identifiants invalides, l'absence de token, et le fait qu'un second utilisateur ne peut ni voir, ni modifier, ni supprimer les ressources du premier.
 
@@ -249,6 +274,8 @@ Pour l'exécuter :
 3. Lancer la collection **complète** avec le *Collection Runner*, **dans l'ordre** : les dossiers réutilisent les variables créées par les précédents (tokens, identifiants).
 
 L'adresse de l'API se règle dans la variable de collection `baseUrl` (`http://localhost:8080` par défaut). Chaque exécution crée des comptes avec des adresses uniques et supprime les espaces qu'elle a créés : la collection peut être relancée sans réinitialiser la base.
+
+Chaque exécution compte 7 connexions échouées pour l'IP du poste de test. Avec la limite par défaut (50 par quart d'heure), la collection peut donc être lancée 7 fois par quart d'heure ; au-delà, redémarrer le serveur remet les compteurs à zéro. Le dossier 14 suppose la limite par email par défaut (`5`) : si `LOGIN_MAX_FAILURES_PER_EMAIL` est modifiée, mettre à jour la variable de collection `loginMaxFailuresPerEmail`.
 
 ## Structure du projet
 
@@ -266,6 +293,7 @@ L'adresse de l'API se règle dans la variable de collection `baseUrl` (`http://l
 │   ├── httpjson/         # Lecture et écriture du JSON, format d'erreur commun
 │   ├── logging/          # Contexte des logs (identifiant de requête, utilisateur) et événements de sécurité
 │   ├── middleware/       # Middlewares d'authentification, de journalisation et de récupération des panics
+│   ├── ratelimit/        # Comptage des échecs et blocage (limitation des tentatives de connexion)
 │   ├── repository/       # Accès aux données (requêtes SQL)
 │   ├── server/           # Déclaration des routes, erreurs JSON des routes inconnues, configuration du serveur HTTP
 │   └── service/          # Logique métier et validation
