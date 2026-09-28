@@ -203,7 +203,7 @@ Un utilisateur n'accède qu'à ses propres espaces et notes. Une ressource appar
 
 ### Format des erreurs
 
-Les erreurs renvoyées par les routes de l'API suivent toutes le même format :
+Toutes les erreurs de l'API suivent le même format, y compris pour une route inexistante ou une méthode non autorisée :
 
 ```json
 {
@@ -225,8 +225,10 @@ Le champ `details` n'est présent que pour les erreurs de validation, et liste t
 | `401`  | `UNAUTHORIZED`        | Token absent, invalide ou expiré                                       |
 | `401`  | `INVALID_CREDENTIALS` | Email ou mot de passe incorrect                                        |
 | `404`  | `NOT_FOUND`           | Ressource inexistante ou appartenant à un autre utilisateur            |
+| `404`  | `ROUTE_NOT_FOUND`     | Aucune route ne correspond au chemin demandé                           |
+| `405`  | `METHOD_NOT_ALLOWED`  | Méthode non autorisée pour ce chemin (l'en-tête `Allow` liste les méthodes acceptées) |
 | `409`  | `EMAIL_ALREADY_USED`  | Adresse email déjà utilisée                                            |
-| `500`  | `INTERNAL_ERROR`      | Erreur inattendue (le détail est journalisé, jamais renvoyé au client) |
+| `500`  | `INTERNAL_ERROR`      | Erreur inattendue, y compris un panic dans un handler (le détail est journalisé, jamais renvoyé au client) |
 
 ## Tests
 
@@ -263,9 +265,9 @@ L'adresse de l'API se règle dans la variable de collection `baseUrl` (`http://l
 │   ├── handler/          # Couche HTTP : lecture des requêtes, écriture des réponses
 │   ├── httpjson/         # Lecture et écriture du JSON, format d'erreur commun
 │   ├── logging/          # Contexte des logs (identifiant de requête, utilisateur) et événements de sécurité
-│   ├── middleware/       # Middlewares d'authentification et de journalisation des requêtes
+│   ├── middleware/       # Middlewares d'authentification, de journalisation et de récupération des panics
 │   ├── repository/       # Accès aux données (requêtes SQL)
-│   ├── server/           # Déclaration des routes et configuration du serveur HTTP
+│   ├── server/           # Déclaration des routes, erreurs JSON des routes inconnues, configuration du serveur HTTP
 │   └── service/          # Logique métier et validation
 ├── migrations/           # Migrations SQL, embarquées dans le binaire
 ├── docker-compose.yml

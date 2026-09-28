@@ -14,6 +14,10 @@ info:
     du serveur. Un client peut envoyer son propre identifiant dans ce même en-tête
     (64 caractères max : lettres, chiffres, `.`, `_` et `-`) ; il est alors réutilisé.
 
+    Toutes les erreurs suivent le schéma `Error`, y compris une route inexistante
+    (404 `ROUTE_NOT_FOUND`) et une méthode non autorisée (405 `METHOD_NOT_ALLOWED`,
+    avec l'en-tête `Allow` listant les méthodes acceptées).
+
 servers:
   - url: http://localhost:8080
     description: Environnement local
