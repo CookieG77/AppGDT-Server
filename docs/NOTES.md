@@ -58,12 +58,12 @@ ainsi que des justifications associées.
 
 - Après des recherches, j'ai pu voir qu'argon2 était toujours l'algorithme de hashage conseillé par l'OWASP mais que bcrypt était aussi convenable. étant donné que l'on ne traitera pas des données sensibles bcrypt devrait être suffisant pour ce projet.
 
-- J'ai décidé d'utiliser un dummyhash pour éviter qu'un utilisateur devine si un email est réel en fonction du temps de traitement du login.
+- J'ai décidé d'utiliser un dummy hash pour éviter qu'un utilisateur devine si un email est réel en fonction du temps de traitement du login.
 - Avec l'utilisation actuelle du des JWT, on ne permet pas une invalidation des tokens par le serveur. Pour une vraie infrastructure, il faudrait avoir un token d'accès et des tokens de rafraichissement :
-  On attribuerait à la connection un token d'accès qui a une TTL courte (~5min) non révocable, mais qui permet d'obtenir un token de rafraichissement juste derrière. Ce token de raffraichissement aurais une durée de vie bien plus longue, mais qui serait stocké dans la BDD et donc révocable avec une simple requête.
+  On attribuerait à la connection un token d'accès qui a une TTL courte (~5min) non révocable, mais qui permet d'obtenir un token de rafraichissement juste derrière. Ce token de rafraichissement aurait une durée de vie bien plus longue, mais qui serait stocké dans la BDD et donc révocable avec une simple requête.
   Pour la taille de cette application, c'est une structure un peu large, mais elle serait solide.
 
-- Maintenant que j'ai au moins une API en place (auth), j'ai mis en place une collection postman 
+- Maintenant que j'ai au moins une API en place (auth), j'ai mis en place une collection postman. 
 
 - J'ai complété les api restantes et aussi créer leurs tests postman à l'aide de Claude pour créer rapidement les tests.
 
@@ -73,3 +73,8 @@ ainsi que des justifications associées.
 - J'ai retravaillé la journalisation afin d'aussi marquer les informations liées à chaque requête que l'on puisse savoir qui demande quoi et quand et quel a été la réponse à cette requête.
 - J'ai mis en place un second middleware pour rattraper les refus complets venant de mux pour éviter de renvoyer des erreurs qui suivent partiellement la structure mise en place dans nos contrats d'API.
 - J'ai mis en place un rate-limiter pour éviter de recevoir des spams de requête et ralentir considérablement le brut-force.
+
+- J'ai mis à jour l'API de healthcheck pour qu'elle suive la structure que j'ai mise en place pour les autres et je l'ai aussi complété pour que ce healthcheck vérifie aussi la connection à la BDD.
+- Avant de passer à la partie client, j'ai mis en place un nouveau endpoint d'api pour pouvoir exercer le droit à la portabilité (elle retourne les infos de l'utilisateur en json).
+  J'ai aussi rajouté une nouvelle méthode prise en charge par l'endpoint 'DELETE /users/me' pour pouvoir exercer le droit à l'effacement. Par précaution le serveur demande le mot de passe de l'utilisateur, mais si on avait une sécurité plus forte, un service SMTP et/ou une double authentification avec un code OTP, il faudrait mêtre en place des mesures plus stricte pour pouvoir supprimer son compte.
+  Par exemple, avoir accès au mail ou avec un code OTP avant de pouvoir valider la suppression. 
