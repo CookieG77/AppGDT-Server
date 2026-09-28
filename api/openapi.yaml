@@ -23,6 +23,8 @@ servers:
     description: Environnement local
 
 tags:
+  - name: Health
+    description: État du service
   - name: Auth
     description: Inscription et connexion
   - name: Users
@@ -38,6 +40,40 @@ security:
   - bearerAuth: []
 
 paths:
+  # ---------------------------------------------------------------------------
+  # Health
+  # ---------------------------------------------------------------------------
+  /health:
+    get:
+      tags: [Health]
+      summary: Vérifier que l'API peut traiter des requêtes
+      description: |
+        Vérifie que le serveur répond et que la base de données est joignable
+        (délai maximal de 2 secondes). Destinée aux outils de supervision.
+      operationId: healthCheck
+      security: []
+      responses:
+        "200":
+          description: Le serveur et la base de données répondent
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    example: ok
+        "503":
+          description: La base de données est injoignable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                code: SERVICE_UNAVAILABLE
+                message: Le service est temporairement indisponible.
+
   # ---------------------------------------------------------------------------
   # Auth
   # ---------------------------------------------------------------------------

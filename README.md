@@ -122,6 +122,8 @@ Pour vérifier que l'API répond :
 curl http://localhost:8080/health
 ```
 
+La route renvoie `200` et `{"status":"ok"}` si le serveur et la base de données répondent, et `503` si la base est injoignable (vérification limitée à 2 secondes). Elle peut servir de sonde à un outil de supervision.
+
 Le serveur s'arrête proprement avec `Ctrl+C` : les requêtes en cours ont jusqu'à 10 secondes pour se terminer.
 
 ## Journalisation
@@ -177,7 +179,7 @@ Les routes protégées attendent un en-tête `Authorization: Bearer <token>`, le
 
 | Méthode  | Route                     | Authentification | Description                                   | Succès |
 |----------|---------------------------|------------------|-----------------------------------------------|--------|
-| `GET`    | `/health`                 | Non              | Vérifie que l'API répond                      | `200`  |
+| `GET`    | `/health`                 | Non              | Vérifie que l'API et la base répondent       | `200`  |
 | `POST`   | `/auth/register`          | Non              | Crée un compte                                | `201`  |
 | `POST`   | `/auth/login`             | Non              | Renvoie un token JWT                          | `200`  |
 | `GET`    | `/users/me`               | Oui              | Profil de l'utilisateur connecté              | `200`  |
@@ -253,6 +255,7 @@ Le champ `details` n'est présent que pour les erreurs de validation, et liste t
 | `409`  | `EMAIL_ALREADY_USED`  | Adresse email déjà utilisée                                            |
 | `429`  | `TOO_MANY_ATTEMPTS`   | Trop de connexions échouées (l'en-tête `Retry-After` indique l'attente) |
 | `500`  | `INTERNAL_ERROR`      | Erreur inattendue, y compris un panic dans un handler (le détail est journalisé, jamais renvoyé au client) |
+| `503`  | `SERVICE_UNAVAILABLE` | Base de données injoignable (renvoyé par `/health`)                    |
 
 ## Tests
 
