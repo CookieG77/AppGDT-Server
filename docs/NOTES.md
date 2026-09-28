@@ -65,8 +65,11 @@ ainsi que des justifications associées.
 
 - Maintenant que j'ai au moins une API en place (auth), j'ai mis en place une collection postman 
 
-- J'ai complété les api restantes et aussi créer leurs tests postman à l'aide de Claude pour créer rapidement les tests
+- J'ai complété les api restantes et aussi créer leurs tests postman à l'aide de Claude pour créer rapidement les tests.
 
 ### 28/09 :
 
 - J'ai mis à jour la doc du readme
+- J'ai retravaillé la journalisation afin d'aussi marquer les informations liées à chaque requête que l'on puisse savoir qui demande quoi et quand et quel a été la réponse à cette requête.
+- J'ai mis en place un second middleware pour rattraper les refus complets venant de mux pour éviter de renvoyer des erreurs qui suivent partiellement la structure mise en place dans nos contrats d'API.
+- J'ai mis en place un rate-limiter pour éviter de recevoir des spams de requête et ralentir considérablement le brut-force.
