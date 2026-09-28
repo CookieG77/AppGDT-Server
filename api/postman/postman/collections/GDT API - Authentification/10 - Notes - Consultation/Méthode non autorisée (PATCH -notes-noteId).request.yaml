@@ -15,5 +15,16 @@ scripts:
   - type: afterResponse
     code: |-
       pm.test("Statut 405", () => pm.response.to.have.status(405));
+      pm.test("Code METHOD_NOT_ALLOWED", () => pm.expect(pm.response.json().code).to.eql("METHOD_NOT_ALLOWED"));
+      pm.test("En-tête Allow listant les méthodes autorisées", () => {
+          const allowed = pm.response.headers.get("Allow").split(",").map(m => m.trim());
+          pm.expect(allowed).to.include.members(["GET", "PUT", "DELETE"]);
+      });
+
+      pm.test("Réponse au format d'erreur du contrat", () => {
+          const body = pm.response.json();
+          pm.expect(body).to.have.property("code").that.is.a("string");
+          pm.expect(body).to.have.property("message").that.is.a("string");
+      });
     language: text/javascript
 order: 14000
