@@ -38,9 +38,13 @@ func New(addr string, h Handlers, requireAuth func(http.Handler) http.Handler) *
 	mux.Handle("PUT /notes/{noteId}", requireAuth(http.HandlerFunc(h.Note.Update)))
 	mux.Handle("DELETE /notes/{noteId}", requireAuth(http.HandlerFunc(h.Note.Delete)))
 
+	// Each request goes through: request logging, panic recovery, then the
+	// router, with JSON errors for requests matching no route
+	handler := middleware.LogRequests(middleware.Recover(withJSONFallback(mux)))
+
 	return &http.Server{
 		Addr:              addr,
-		Handler:           middleware.LogRequests(mux),
+		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       5 * time.Second,
 		WriteTimeout:      5 * time.Second,
