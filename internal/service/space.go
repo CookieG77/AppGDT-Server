@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"unicode/utf8"
 
@@ -39,6 +40,7 @@ func (s *SpaceService) Create(ctx context.Context, userID int64, name, descripti
 	if err != nil {
 		return domain.Space{}, fmt.Errorf("creating space: %w", err)
 	}
+	slog.InfoContext(ctx, "space created", "spaceID", space.ID)
 	return space, nil
 }
 
@@ -76,6 +78,7 @@ func (s *SpaceService) Update(ctx context.Context, userID, spaceID int64, name, 
 	if err != nil {
 		return domain.Space{}, fmt.Errorf("updating space: %w", err)
 	}
+	slog.InfoContext(ctx, "space updated", "spaceID", space.ID)
 	return space, nil
 }
 
@@ -86,6 +89,7 @@ func (s *SpaceService) Delete(ctx context.Context, userID, spaceID int64) error 
 	if err := s.spaces.Delete(ctx, userID, spaceID); err != nil {
 		return fmt.Errorf("deleting space: %w", err)
 	}
+	slog.InfoContext(ctx, "space deleted", "spaceID", spaceID)
 	return nil
 }
 

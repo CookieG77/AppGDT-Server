@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"unicode/utf8"
 
@@ -46,6 +47,7 @@ func (s *NoteService) Create(ctx context.Context, userID, spaceID int64, input N
 	if err != nil {
 		return domain.Note{}, fmt.Errorf("creating note: %w", err)
 	}
+	slog.InfoContext(ctx, "note created", "noteID", note.ID, "spaceID", note.SpaceID)
 	return note, nil
 }
 
@@ -90,6 +92,7 @@ func (s *NoteService) Update(ctx context.Context, userID, noteID int64, input No
 	if err != nil {
 		return domain.Note{}, fmt.Errorf("updating note: %w", err)
 	}
+	slog.InfoContext(ctx, "note updated", "noteID", note.ID)
 	return note, nil
 }
 
@@ -100,6 +103,7 @@ func (s *NoteService) Delete(ctx context.Context, userID, noteID int64) error {
 	if err := s.notes.Delete(ctx, userID, noteID); err != nil {
 		return fmt.Errorf("deleting note: %w", err)
 	}
+	slog.InfoContext(ctx, "note deleted", "noteID", noteID)
 	return nil
 }
 
