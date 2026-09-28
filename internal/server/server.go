@@ -11,17 +11,18 @@ import (
 )
 
 type Handlers struct {
-	Auth  *handler.AuthHandler
-	User  *handler.UserHandler
-	Space *handler.SpaceHandler
-	Note  *handler.NoteHandler
+	Health *handler.HealthHandler
+	Auth   *handler.AuthHandler
+	User   *handler.UserHandler
+	Space  *handler.SpaceHandler
+	Note   *handler.NoteHandler
 }
 
 func New(addr string, h Handlers, requireAuth func(http.Handler) http.Handler) *http.Server {
 	mux := http.NewServeMux()
 
 	// Public routes
-	mux.HandleFunc("GET /health", handler.Health)
+	mux.HandleFunc("GET /health", h.Health.Check)
 	mux.HandleFunc("POST /auth/register", h.Auth.Register)
 	mux.HandleFunc("POST /auth/login", h.Auth.Login)
 

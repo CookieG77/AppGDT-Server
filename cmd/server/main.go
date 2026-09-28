@@ -86,10 +86,11 @@ func run(logger *slog.Logger) error {
 
 	// Creating handlers and server
 	handlers := server.Handlers{
-		Auth:  handler.NewAuthHandler(authService),
-		User:  handler.NewUserHandler(authService),
-		Space: handler.NewSpaceHandler(spaceService),
-		Note:  handler.NewNoteHandler(noteService),
+		Health: handler.NewHealthHandler(pool),
+		Auth:   handler.NewAuthHandler(authService),
+		User:   handler.NewUserHandler(authService),
+		Space:  handler.NewSpaceHandler(spaceService),
+		Note:   handler.NewNoteHandler(noteService),
 	}
 
 	requireAuth := middleware.Authenticate(tokenManager)
