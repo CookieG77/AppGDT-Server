@@ -15,7 +15,7 @@ BIN := bin/gdt-server$(EXT)
 
 help:
 	@echo Cibles disponibles :
-	@echo   make db-up       - demarre PostgreSQL (docker compose)
+	@echo   make db-up       - demarre PostgreSQL avec docker compose
 	@echo   make db-down     - arrete PostgreSQL
 	@echo   make run         - lance l API
 	@echo   make seed        - cree les comptes de demonstration
