@@ -14,7 +14,10 @@ scripts:
   - type: beforeRequest
     code: |-
       // Envoie (limite - 1) échecs : la requête principale est le dernier échec autorisé
-      const max = Number(pm.collectionVariables.get("loginMaxFailuresPerEmail"));
+      // Limite par email du serveur (LOGIN_MAX_FAILURES_PER_EMAIL) : 5 par défaut.
+      // La variable de collection n'est nécessaire que si le serveur utilise une autre valeur.
+      const max = Number(pm.collectionVariables.get("loginMaxFailuresPerEmail")) || 5;
+      pm.collectionVariables.set("bruteFailuresSent", 0);
       const baseUrl = pm.collectionVariables.get("baseUrl");
       for (let i = 1; i < max; i++) {
           pm.sendRequest({
@@ -30,11 +33,15 @@ scripts:
                   pm.expect(error).to.be.null;
                   pm.expect(res.code).to.eql(401);
               });
+              pm.collectionVariables.set("bruteFailuresSent", Number(pm.collectionVariables.get("bruteFailuresSent")) + 1);
           });
       }
     language: text/javascript
   - type: afterResponse
     code: |-
+      const max = Number(pm.collectionVariables.get("loginMaxFailuresPerEmail")) || 5;
+      pm.test(`Les ${max - 1} échecs préalables ont bien été envoyés`, () =>
+          pm.expect(Number(pm.collectionVariables.get("bruteFailuresSent"))).to.eql(max - 1));
       pm.test("Le dernier échec autorisé reste un 401", () => pm.response.to.have.status(401));
       pm.test("Code INVALID_CREDENTIALS", () => pm.expect(pm.response.json().code).to.eql("INVALID_CREDENTIALS"));
     language: text/javascript

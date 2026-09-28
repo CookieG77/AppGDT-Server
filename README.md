@@ -295,7 +295,7 @@ Pour l'exécuter :
 
 L'adresse de l'API se règle dans la variable de collection `baseUrl` (`http://localhost:8080` par défaut). Chaque exécution crée des comptes avec des adresses uniques et supprime les espaces qu'elle a créés : la collection peut être relancée sans réinitialiser la base.
 
-Chaque exécution compte 7 connexions échouées pour l'IP du poste de test. Avec la limite par défaut (50 par quart d'heure), la collection peut donc être lancée 7 fois par quart d'heure ; au-delà, redémarrer le serveur remet les compteurs à zéro. Le dossier 14 suppose la limite par email par défaut (`5`) : si `LOGIN_MAX_FAILURES_PER_EMAIL` est modifiée, mettre à jour la variable de collection `loginMaxFailuresPerEmail`.
+Chaque exécution compte 7 connexions échouées pour l'IP du poste de test. Avec la limite par défaut (50 par quart d'heure), la collection peut donc être lancée 7 fois par quart d'heure ; au-delà, redémarrer le serveur remet les compteurs à zéro. Le dossier 14 suppose la limite par email par défaut (`5`) : si `LOGIN_MAX_FAILURES_PER_EMAIL` est modifiée, créer la variable de collection `loginMaxFailuresPerEmail` avec la même valeur.
 
 ## Structure du projet
 

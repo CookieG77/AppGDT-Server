@@ -141,9 +141,6 @@ variables:
   - key: bruteEmailUpper
     value: ""
     disabled: false
-  - key: loginMaxFailuresPerEmail
-    value: "5"
-    disabled: false
   - key: rgpdEmail
     value: ""
     disabled: false
