@@ -11,7 +11,7 @@ endif
 
 BIN := bin/gdt-server$(EXT)
 
-.PHONY: help db-up db-down run seed seed-reset build test vet fmt clean
+.PHONY: help db-up db-down run seed seed-reset build test test-integration vet fmt clean
 
 help:
 	@echo Cibles disponibles :
@@ -21,7 +21,8 @@ help:
 	@echo   make seed        - cree les comptes de demonstration
 	@echo   make seed-reset  - recree les comptes de demonstration
 	@echo   make build       - compile l API dans bin/
-	@echo   make test        - lance les tests
+	@echo   make test        - lance les tests unitaires
+	@echo   make test-integration GDT_TEST_DATABASE_URL=...  - lance aussi les tests d integration
 	@echo   make vet         - analyse statique du code
 	@echo   make fmt         - formate le code
 	@echo   make clean       - supprime bin/
@@ -46,6 +47,11 @@ build:
 
 test:
 	go test ./...
+
+# Requires GDT_TEST_DATABASE_URL (see README), passed on the command line:
+#   make test-integration GDT_TEST_DATABASE_URL=postgres://...
+test-integration:
+	go test -count=1 ./...
 
 vet:
 	go vet ./...

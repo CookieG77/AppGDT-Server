@@ -345,7 +345,25 @@ Le champ `details` n'est présent que pour les erreurs de validation, et liste t
 
 ## Tests
 
-L'API est couverte par une collection Postman de plus de 500 assertions, rangée dans [`api/postman/`](api/postman/). Elle est organisée en dossiers numérotés :
+### Tests Go
+
+Les tests unitaires sont placés à côté du code qu'ils testent (fichiers `*_test.go`), comme le veut Go : c'est ce qui leur donne accès aux fonctions internes des paquets. Les tests d'intégration, qui démarrent toute l'API sur une vraie base, sont regroupés dans le dossier `tests/`.
+
+| Tests | Emplacement | Contenu |
+|---|---|---|
+| Unitaires | `internal/auth`, `internal/ratelimit`, `internal/httpjson`, `internal/middleware` | Hachage bcrypt, JWT (signature, expiration, algorithme `none`, token modifié), limitation des tentatives, lecture du JSON et format des erreurs, middleware d'authentification (compte supprimé, en-tête invalide) |
+| Intégration | `tests/` | Toute l'API sur PostgreSQL : inscription et connexion, validation, espaces et notes (suppression en cascade), isolation entre utilisateurs, blocage après trop d'échecs, export et suppression du compte, routes et méthodes inconnues |
+
+```bash
+make test                # tests unitaires (go test ./...)
+make test-integration GDT_TEST_DATABASE_URL="postgres://gdt:change-me@localhost:5432/gdt?sslmode=disable"
+```
+
+Sans `GDT_TEST_DATABASE_URL`, les tests d'intégration sont ignorés. Ils peuvent utiliser la base de développement (`make db-up`) : chaque test crée ses propres comptes et les supprime à la fin.
+
+### Collection Postman
+
+L'API est aussi couverte par une collection Postman de plus de 500 assertions, rangée dans [`api/postman/`](api/postman/). Elle est organisée en dossiers numérotés :
 
 | Dossiers | Domaine        | Contenu                                                                                               |
 |----------|----------------|-------------------------------------------------------------------------------------------------------|
@@ -390,6 +408,7 @@ Chaque exécution compte 7 connexions échouées pour l'IP du poste de test. Ave
 │   ├── server/           # Déclaration des routes, erreurs JSON des routes inconnues, configuration du serveur HTTP
 │   └── service/          # Logique métier et validation
 ├── migrations/           # Migrations SQL, embarquées dans le binaire
+├── tests/                # Tests d'intégration de l'API (base PostgreSQL réelle)
 ├── docker-compose.yml
 ├── LICENSE
 ├── Makefile              # Commandes courantes (make help)
